@@ -50,7 +50,7 @@ pub(super) fn release_identity<'a>(
     version: &'a str,
     key: Option<&'a str>,
 ) -> Result<(&'a str, &'a str)> {
-    let key = key.ok_or(Error::LocalBuild)?;
+    let key = key.filter(|key| !key.is_empty()).ok_or(Error::LocalBuild)?;
     parse_version(version).ok_or(Error::LocalBuild)?;
     Ok((version, key))
 }

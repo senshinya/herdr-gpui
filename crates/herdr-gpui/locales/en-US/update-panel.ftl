@@ -47,6 +47,7 @@ update-panel-release-notes = Release Notes
 update-panel-retry = Retry
 update-panel-check = Check for Updates
 update-panel-download = Download
+update-panel-open-release = Open Release
 update-panel-install = Install Update
 update-panel-upgrade = Update with Homebrew
 update-panel-restart = Restart

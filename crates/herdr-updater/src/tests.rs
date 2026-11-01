@@ -2,6 +2,7 @@ use super::*;
 use anyhow::Context as _;
 
 mod channels;
+mod manual_updates;
 mod packages;
 mod progress;
 

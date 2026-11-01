@@ -4,7 +4,7 @@ fn release(tag: &str, prerelease: bool, body: serde_json::Value) -> serde_json::
     serde_json::json!({"tag_name": tag, "draft": false, "prerelease": prerelease, "body": body, "assets": [{
         "name": "update-manifest.json", "size": 100,
         "browser_download_url": format!(
-            "https://github.com/penso/herdr-gpui/releases/download/{tag}/update-manifest.json"
+            "https://github.com/senshinya/herdr-gpui/releases/download/{tag}/update-manifest.json"
         ),
     }]})
 }

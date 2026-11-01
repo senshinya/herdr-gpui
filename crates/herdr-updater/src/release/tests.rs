@@ -3,8 +3,10 @@ use anyhow::Context as _;
 use ed25519_dalek::{Signer, SigningKey};
 
 mod beta_channel;
+mod fork_versions;
 mod grouped_notes;
 mod host_builds;
+mod manual_updates;
 mod null_body;
 mod package_selection;
 mod packages;
@@ -125,7 +127,7 @@ fn versions_are_canonical_bounded_calendar_versions() {
     ] {
         assert!(parse_version(value).is_none(), "{value}");
     }
-    assert_eq!(parse_version("20260920.3"), Some((20260920, 3)));
+    assert_eq!(parse_version("20260920.3"), Some((20260920, 3, 0)));
     for (new, old) in [
         ("20260920.2", "20260920.1"),
         ("20260920.10", "20260920.9"),
@@ -405,7 +407,7 @@ fn offers_compare_on_signed_material_not_notes() {
 fn a_release_body_is_optional_and_kept_verbatim() -> anyhow::Result<()> {
     let mut value = serde_json::json!({"tag_name":"v20260920.2", "draft":false, "prerelease":false, "assets":[{
         "name":"update-manifest.json", "size":100,
-        "browser_download_url":"https://github.com/penso/herdr-gpui/releases/download/v20260920.2/update-manifest.json"
+        "browser_download_url":"https://github.com/senshinya/herdr-gpui/releases/download/v20260920.2/update-manifest.json"
     }]});
     // A release published without notes still parses; there is simply nothing to show.
     assert_eq!(parse_release(&serde_json::to_vec(&value)?)?.body, None);
@@ -422,7 +424,7 @@ fn a_release_body_is_optional_and_kept_verbatim() -> anyhow::Result<()> {
 fn release_metadata_rejects_unstable_and_untrusted_names() -> anyhow::Result<()> {
     let value = serde_json::json!({"tag_name":"v20260920.2", "draft":false, "prerelease":false, "assets":[{
         "name":"update-manifest.json", "size":100,
-        "browser_download_url":"https://github.com/penso/herdr-gpui/releases/download/v20260920.2/update-manifest.json"
+        "browser_download_url":"https://github.com/senshinya/herdr-gpui/releases/download/v20260920.2/update-manifest.json"
     }]});
     assert_eq!(
         parse_release(&serde_json::to_vec(&value)?)?.version,
@@ -443,7 +445,7 @@ fn release_metadata_rejects_unstable_and_untrusted_names() -> anyhow::Result<()>
     for tag in ["20260920.2", "vv20260920.2", "v20260920.1"] {
         let mut bad = value.clone();
         bad["assets"][0]["browser_download_url"] = format!(
-            "https://github.com/penso/herdr-gpui/releases/download/{tag}/update-manifest.json"
+            "https://github.com/senshinya/herdr-gpui/releases/download/{tag}/update-manifest.json"
         )
         .into();
         assert!(matches!(
@@ -471,7 +473,7 @@ fn release_metadata_rejects_unstable_and_untrusted_names() -> anyhow::Result<()>
 fn a_release_page_comes_from_the_version_alone() {
     assert_eq!(
         release_page("20261008.1"),
-        "https://github.com/penso/herdr-gpui/releases/tag/v20261008.1"
+        "https://github.com/senshinya/herdr-gpui/releases/tag/v20261008.1"
     );
     // Not a calendar version, so no tag is guessed from it.
     for version in ["9999.0.0", "20261008.1/../../evil", "", "dev"] {

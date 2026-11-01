@@ -216,6 +216,7 @@ pub(crate) fn download_caption(state: &State) -> Option<(String, Option<String>)
 enum UpdateAction {
     Check,
     Download,
+    OpenRelease,
     Install,
     Upgrade,
     Restart,
@@ -273,6 +274,10 @@ impl HerdrWindow {
             State::Available { .. } => {
                 (fl!("update-panel-available"), Some(UpdateAction::Download))
             }
+            State::Manual { .. } => (
+                fl!("update-panel-available"),
+                Some(UpdateAction::OpenRelease),
+            ),
             State::Downloading { received, total } => (
                 if *total > 0 && received >= total {
                     fl!("update-panel-verifying")
@@ -312,6 +317,7 @@ impl HerdrWindow {
         };
         let latest = match state {
             State::Available { version, .. }
+            | State::Manual { version, .. }
             | State::Ready { version }
             | State::Homebrew { version, .. }
             | State::Restart { version } => version.clone(),
@@ -323,7 +329,9 @@ impl HerdrWindow {
         };
         // Notes are shown while an update is on offer, not once it is under way.
         let notes = match state {
-            State::Available { notes, .. } | State::Homebrew { notes, .. } => Some(notes.as_str()),
+            State::Available { notes, .. }
+            | State::Manual { notes, .. }
+            | State::Homebrew { notes, .. } => Some(notes.as_str()),
             _ => None,
         };
         // The dialog shows a bounded excerpt; the release page has the whole text.
@@ -508,22 +516,24 @@ impl HerdrWindow {
             .items_center()
             .justify_end()
             .gap(px(8.))
-            .child(
-                div()
-                    .id("app-update-releases")
-                    .debug_selector(|| "app-update-releases".into())
-                    .px(px(12.))
-                    .py(px(8.))
-                    .rounded(px(crate::config::corners::CONTROL))
-                    .cursor_pointer()
-                    .text_color(rgb(theme.muted))
-                    .hover(|s| s.bg(rgb(theme.active)).text_color(rgb(theme.foreground)))
-                    .child(fl!("update-panel-manual-releases"))
-                    .on_click(|_, _, cx| {
-                        cx.stop_propagation();
-                        cx.open_url(crate::updater::RELEASES_PAGE);
-                    }),
-            )
+            .when(!matches!(state, State::Manual { .. }), |buttons| {
+                buttons.child(
+                    div()
+                        .id("app-update-releases")
+                        .debug_selector(|| "app-update-releases".into())
+                        .px(px(12.))
+                        .py(px(8.))
+                        .rounded(px(crate::config::corners::CONTROL))
+                        .cursor_pointer()
+                        .text_color(rgb(theme.muted))
+                        .hover(|s| s.bg(rgb(theme.active)).text_color(rgb(theme.foreground)))
+                        .child(fl!("update-panel-manual-releases"))
+                        .on_click(|_, _, cx| {
+                            cx.stop_propagation();
+                            cx.open_url(crate::updater::RELEASES_PAGE);
+                        }),
+                )
+            })
             .when_some(notes_page, |buttons, url| {
                 buttons.child(
                     div()
@@ -549,6 +559,7 @@ impl HerdrWindow {
                 }
                 UpdateAction::Check => fl!("update-panel-check"),
                 UpdateAction::Download => fl!("update-panel-download"),
+                UpdateAction::OpenRelease => fl!("update-panel-open-release"),
                 UpdateAction::Install => fl!("update-panel-install"),
                 UpdateAction::Upgrade => fl!("update-panel-upgrade"),
                 UpdateAction::Restart => fl!("update-panel-restart"),
@@ -573,7 +584,9 @@ impl HerdrWindow {
                                 | State::Homebrew { version, .. } => {
                                     this.update_preview = Some(State::Ready { version });
                                 }
-                                State::Ready { .. } => this.dismiss_menu(window, cx),
+                                State::Ready { .. } | State::Manual { .. } => {
+                                    this.dismiss_menu(window, cx)
+                                }
                                 _ => this.update_preview = Some(State::Idle),
                             }
                         } else {
@@ -585,6 +598,9 @@ impl HerdrWindow {
                                 ) => this.updater.check(),
                                 (UpdateAction::Download, State::Available { .. }) => {
                                     this.updater.download()
+                                }
+                                (UpdateAction::OpenRelease, State::Manual { version, .. }) => {
+                                    cx.open_url(&crate::updater::release_page(version));
                                 }
                                 (UpdateAction::Install, State::Ready { .. }) => {
                                     this.updater.install()

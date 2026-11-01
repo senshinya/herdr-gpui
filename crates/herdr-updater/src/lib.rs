@@ -49,7 +49,8 @@ use std::{
 /// AppUserModelID. The Homebrew relaunch reopens the bundle by it.
 pub const APP_ID: &str = "so.pen.herdr-gpui";
 
-/// Release builds embed the same calendar version (YYYYMMDD.COUNTER) used for
+/// Release builds embed the same calendar version (optionally suffixed with a
+/// `-shinya.REVISION` fork revision) used for
 /// the tag, the bundle, and the downloadable artifacts. Local builds are not
 /// releases, so they carry no version the updater or an issue report could
 /// act on.
@@ -76,6 +77,11 @@ pub enum State {
         version: String,
         /// GitHub's release notes for this version, shown before updating.
         /// Untrusted text, not covered by the signed manifest.
+        notes: String,
+    },
+    /// A fork release the user downloads from its canonical GitHub page.
+    Manual {
+        version: String,
         notes: String,
     },
     Downloading {
@@ -260,10 +266,9 @@ impl Updater {
     pub fn start(channel: UpdateChannel) -> Self {
         let mut updater = Self::default();
         updater.channel = channel;
-        let Some(key) = option_env!("HERDR_UPDATE_PUBLIC_KEY") else {
-            return updater;
-        };
-        if release::parse_version(APP_VERSION).is_none() || key.is_empty() {
+        let manual = release::fork_version(APP_VERSION);
+        let key = option_env!("HERDR_UPDATE_PUBLIC_KEY").unwrap_or_default();
+        if release::parse_version(APP_VERSION).is_none() || (!manual && key.is_empty()) {
             return updater;
         }
         if release::target().is_none() {
@@ -271,7 +276,7 @@ impl Updater {
             return updater;
         }
         #[cfg(windows)]
-        if let Some(reason) = windows::missing_publisher() {
+        if !manual && let Some(reason) = windows::missing_publisher() {
             updater.state = State::Disabled(reason.to_string());
             return updater;
         }
@@ -325,6 +330,7 @@ impl Updater {
         matches!(
             self.state,
             State::Available { .. }
+                | State::Manual { .. }
                 | State::Ready { .. }
                 | State::Homebrew { .. }
                 | State::Restart { .. }
@@ -466,6 +472,7 @@ impl Updater {
         self.state = message.state;
         match &self.state {
             State::Available { version, .. }
+            | State::Manual { version, .. }
             | State::Ready { version }
             | State::Homebrew { version, .. }
             | State::Restart { version } => {
@@ -587,6 +594,16 @@ fn worker(
         }
         let generation = command.generation;
         let result: Result<State> = match command.operation {
+            Operation::Check(channel) if release::fork_version(APP_VERSION) => {
+                prepared = None;
+                offer = None;
+                release::check_manual(APP_VERSION, channel, &cancelled).map(|found| {
+                    found.map_or(State::Current, |release| State::Manual {
+                        version: release.version,
+                        notes: release.notes,
+                    })
+                })
+            }
             Operation::Check(channel) => {
                 publish(&mailbox, generation, State::Checking, None);
                 // Only a channel change rechecks with a download staged, and

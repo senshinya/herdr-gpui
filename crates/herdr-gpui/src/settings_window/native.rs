@@ -9,8 +9,42 @@ mod fonts;
 #[cfg(feature = "mockup")]
 mod tailnet;
 mod themes;
+#[cfg(feature = "mockup")]
+mod updates;
 use fonts::verify_fonts;
 use themes::verify_themes;
+
+#[cfg(feature = "mockup")]
+async fn capture_window(window: AnyWindowHandle, extension: &str, cx: &mut AsyncApp) -> Result<()> {
+    let Some(path) = std::env::var_os("HERDR_TEST_SETTINGS_CAPTURE") else {
+        return Ok(());
+    };
+    let path = std::path::PathBuf::from(path).with_extension(extension);
+    window.update(cx, |_, window, cx| window.draw(cx).clear(cx))?;
+    cx.background_executor()
+        .timer(crate::motion::duration(crate::motion::ENTER))
+        .await;
+    let image = window.update(cx, |_, window, cx| -> Result<_> {
+        window.draw(cx).clear(cx);
+        window.render_to_image()
+    })??;
+    cx.background_executor()
+        .spawn(async move {
+            use image::codecs::png::{CompressionType, FilterType, PngEncoder};
+            let mut png = Vec::new();
+            image.write_with_encoder(PngEncoder::new_with_quality(
+                &mut png,
+                CompressionType::Fast,
+                FilterType::Sub,
+            ))?;
+            std::fs::write(&path, png)?;
+            // i18n: data
+            eprintln!("SIDEBAR GPU capture: {}", path.display());
+            anyhow::Ok(())
+        })
+        .await?;
+    Ok(())
+}
 
 /// Where the Sidebar page painted, after the section rows.
 pub(super) const SIDEBAR_PAGE: usize = Section::ALL.len();
@@ -103,6 +137,8 @@ pub(crate) async fn verify_native(
     let capture = std::env::var_os("HERDR_TEST_SETTINGS_CAPTURE").map(std::path::PathBuf::from);
     #[cfg(feature = "mockup")]
     tailnet::capture_devices(source, cx).await?;
+    #[cfg(feature = "mockup")]
+    updates::capture(source, cx).await?;
     let before = source.update(cx, |view, _, _| view.input_probe)?;
     AnyWindowHandle::from(source).update(cx, |_, window, cx| -> Result<()> {
         window.draw(cx).clear(cx);

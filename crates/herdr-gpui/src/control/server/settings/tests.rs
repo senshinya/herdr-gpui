@@ -11,6 +11,8 @@ use crate::{
 };
 use std::time::{Duration, Instant};
 
+mod manual_updates;
+
 #[test]
 fn a_timed_hold_ends_only_the_hold_it_was_set_on() {
     let now = Instant::now();

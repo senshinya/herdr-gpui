@@ -24,6 +24,7 @@ pub(super) fn describe(state: &State) -> (&'static str, Option<String>, Option<&
         State::Checking => ("checking", None, None),
         State::Current => ("current", None, None),
         State::Available { version, .. } => ("available", None, Some(version)),
+        State::Manual { version, .. } => ("manual", None, Some(version)),
         State::Downloading { .. } => ("downloading", None, None),
         State::Ready { version } => ("ready", None, Some(version)),
         State::Installing => ("installing", None, None),

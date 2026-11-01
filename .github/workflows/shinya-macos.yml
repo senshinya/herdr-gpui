@@ -1,16 +1,16 @@
-name: Shinya macOS build
+name: Shinya macOS release
 run-name: Shinya macOS arm64 · ${{ github.ref_name }} · ${{ github.sha }}
 
 on:
   push:
-    branches: [main, 'build/macos-*']
+    branches: [main]
   workflow_dispatch:
 
 permissions: {}
 
 concurrency:
   group: shinya-macos-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -22,6 +22,10 @@ jobs:
     timeout-minutes: 90
     permissions:
       contents: read
+    outputs:
+      artifact_name: ${{ steps.version.outputs.artifact_name }}
+      upstream_commit: ${{ steps.version.outputs.upstream_commit }}
+      version: ${{ steps.version.outputs.version }}
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -92,3 +96,47 @@ jobs:
           path: dist/*
           if-no-files-found: error
           retention-days: 14
+
+  publish:
+    needs: build
+    if: github.repository == 'senshinya/herdr-gpui' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: dist
+      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283
+        with:
+          tool: git-cliff@2.12.0
+          fallback: none
+      - name: Generate release notes
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          UPSTREAM_COMMIT: ${{ needs.build.outputs.upstream_commit }}
+        run: |
+          {
+            printf 'macOS Apple Silicon, macOS 14.2+. Ad-hoc signed; not notarized.\n\n'
+            printf 'Upstream base: %s. Fork source: %s.\n\n' "$UPSTREAM_COMMIT" "$GITHUB_SHA"
+          } > "$RUNNER_TEMP/RELEASE_NOTES.md"
+          git-cliff --config cliff.toml --tag "v$VERSION" --strip header \
+            "$UPSTREAM_COMMIT..$GITHUB_SHA" >> "$RUNNER_TEMP/RELEASE_NOTES.md"
+      - name: Verify and publish the build
+        env:
+          ARTIFACT_NAME: ${{ needs.build.outputs.artifact_name }}
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          (cd dist && shasum -a 256 -c "$ARTIFACT_NAME.zip.sha256")
+          test "$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq .object.sha)" = "$GITHUB_SHA"
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --draft \
+            --title "Herdr $VERSION" --notes-file "$RUNNER_TEMP/RELEASE_NOTES.md" dist/*
+          gh release edit "v$VERSION" --draft=false --latest

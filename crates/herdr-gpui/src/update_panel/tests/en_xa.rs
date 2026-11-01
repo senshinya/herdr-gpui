@@ -35,6 +35,10 @@ fn states() -> Vec<State> {
             version: version(),
             notes: PREVIEW_NOTES.into(),
         },
+        State::Manual {
+            version: version(),
+            notes: PREVIEW_NOTES.into(),
+        },
         State::Downloading {
             received: 25_000_000,
             total: 100_000_000,

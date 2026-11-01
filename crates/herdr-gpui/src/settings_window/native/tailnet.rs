@@ -34,37 +34,6 @@ fn snapshot() -> Snapshot {
     snapshot
 }
 
-async fn capture(window: AnyWindowHandle, extension: &str, cx: &mut AsyncApp) -> Result<()> {
-    let Some(path) = std::env::var_os("HERDR_TEST_SETTINGS_CAPTURE") else {
-        return Ok(());
-    };
-    let path = std::path::PathBuf::from(path).with_extension(extension);
-    window.update(cx, |_, window, cx| window.draw(cx).clear(cx))?;
-    cx.background_executor()
-        .timer(crate::motion::duration(crate::motion::ENTER))
-        .await;
-    let image = window.update(cx, |_, window, cx| -> Result<_> {
-        window.draw(cx).clear(cx);
-        window.render_to_image()
-    })??;
-    cx.background_executor()
-        .spawn(async move {
-            use image::codecs::png::{CompressionType, FilterType, PngEncoder};
-            let mut png = Vec::new();
-            image.write_with_encoder(PngEncoder::new_with_quality(
-                &mut png,
-                CompressionType::Fast,
-                FilterType::Sub,
-            ))?;
-            std::fs::write(&path, png)?;
-            // i18n: data
-            eprintln!("SIDEBAR Tailnet GPU capture: {}", path.display());
-            anyhow::Ok(())
-        })
-        .await?;
-    Ok(())
-}
-
 async fn keys(window: AnyWindowHandle, keys: &str, cx: &mut AsyncApp) -> Result<()> {
     for key in keys.split_whitespace() {
         window.update(cx, |_, window, cx| -> Result<()> {
@@ -94,20 +63,20 @@ pub(super) async fn capture_devices(
         view.endpoints[0].connection.target = target;
         view.native_tailnet_picker(snapshot(), window, cx);
     })?;
-    capture(source.into(), "picker.png", cx).await?;
+    capture_window(source.into(), "picker.png", cx).await?;
     source.update(cx, |_, window, _| window.resize(size(px(680.), px(560.))))?;
-    capture(source.into(), "picker-narrow.png", cx).await?;
+    capture_window(source.into(), "picker-narrow.png", cx).await?;
     // i18n: data
     keys(source.into(), "down enter", cx).await?;
-    capture(source.into(), "details.png", cx).await?;
+    capture_window(source.into(), "details.png", cx).await?;
     // i18n: data
     keys(source.into(), "shift-tab enter tab tab tab enter", cx).await?;
-    capture(source.into(), "manual.png", cx).await?;
+    capture_window(source.into(), "manual.png", cx).await?;
     source.update(cx, |view, window, cx| {
         view.dismiss_menu(window, cx);
         window.resize(original_size);
     })?;
-    capture(source.into(), "status-bar.png", cx).await?;
+    capture_window(source.into(), "status-bar.png", cx).await?;
     Ok(())
 }
 
@@ -127,7 +96,7 @@ pub(super) async fn capture_settings_devices(
             view.select_section(Section::Tailscale, window, cx);
             view.native_tailnet_devices(snapshot(), window, cx);
         })?;
-        capture(settings.into(), name, cx).await?;
+        capture_window(settings.into(), name, cx).await?;
     }
     settings.update(cx, |view, window, cx| {
         view.select_section(Section::General, window, cx);

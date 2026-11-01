@@ -4,9 +4,11 @@
 use super::UpdateChannel;
 mod format;
 mod host;
+mod manual;
 use super::error::{Error, Result};
 pub(super) use format::Format;
 pub use host::{HOST_TARGETS, download_host_build};
+pub(super) use manual::check as check_manual;
 use std::{
     fs::{File, OpenOptions},
     io::{Read, Write},
@@ -27,14 +29,14 @@ const METADATA_LIMIT: usize = 1024 * 1024;
 /// Each listed release carries its full asset metadata (~2 KiB per asset), so
 /// the short page the beta channel reads needs more room than one release.
 const RELEASE_LIST_LIMIT: usize = 4 * 1024 * 1024;
-pub const RELEASES_PAGE: &str = "https://github.com/penso/herdr-gpui/releases";
+pub const RELEASES_PAGE: &str = "https://github.com/senshinya/herdr-gpui/releases";
 /// GitHub's latest release is never a prerelease: this is the stable channel.
-const LATEST_URL: &str = "https://api.github.com/repos/penso/herdr-gpui/releases/latest";
+const LATEST_URL: &str = "https://api.github.com/repos/senshinya/herdr-gpui/releases/latest";
 /// The newest published releases of both kinds, for the beta channel.
-const RELEASES_URL: &str = "https://api.github.com/repos/penso/herdr-gpui/releases?per_page=10";
+const RELEASES_URL: &str = "https://api.github.com/repos/senshinya/herdr-gpui/releases?per_page=10";
 /// The listing the grouped notes are read from. One page, sized to the cap, so
 /// a full page can be held under its own budget below.
-const HISTORY_URL: &str = "https://api.github.com/repos/penso/herdr-gpui/releases?per_page=20";
+const HISTORY_URL: &str = "https://api.github.com/repos/senshinya/herdr-gpui/releases?per_page=20";
 /// A published release carries up to 136 assets, each about 2 KiB of metadata, so
 /// a page of twenty runs to roughly 5.5 MiB before any release bodies. The beta
 /// channel's 4 MiB budget would truncate that request, which fails closed: the
@@ -97,8 +99,27 @@ impl Offer {
 
 /// Releases are calendar versions: an eight-digit `YYYYMMDD` date and a same-day
 /// counter starting at 1. Both components compare numerically, so publication
-/// order is version order.
-pub(super) fn parse_version(value: &str) -> Option<(u64, u64)> {
+/// order is version order. Fork releases append `-shinya.REVISION`; the positive
+/// 16-bit revision compares after the upstream version.
+type Version = (u64, u64, u16);
+
+pub(super) fn fork_version(value: &str) -> bool {
+    parse_version(value).is_some_and(|(_, _, revision)| revision > 0)
+}
+
+pub(super) fn parse_version(value: &str) -> Option<Version> {
+    let (value, revision) = match value.split_once("-shinya.") {
+        Some((base, revision)) => {
+            if revision.is_empty()
+                || revision.starts_with('0')
+                || !revision.bytes().all(|byte| byte.is_ascii_digit())
+            {
+                return None;
+            }
+            (base, revision.parse::<u16>().ok()?)
+        }
+        None => (value, 0),
+    };
     let (date, counter) = value.split_once('.')?;
     if date.len() != 8
         || date.starts_with('0')
@@ -109,7 +130,7 @@ pub(super) fn parse_version(value: &str) -> Option<(u64, u64)> {
     {
         return None;
     }
-    Some((date.parse().ok()?, counter.parse().ok()?))
+    Some((date.parse().ok()?, counter.parse().ok()?, revision))
 }
 
 pub(super) fn target() -> Option<&'static str> {
@@ -251,7 +272,7 @@ pub fn release_page(version: &str) -> String {
 }
 
 fn release_url(version: &str, name: &str) -> String {
-    format!("https://github.com/penso/herdr-gpui/releases/download/v{version}/{name}")
+    format!("{RELEASES_PAGE}/download/v{version}/{name}")
 }
 
 fn allowed_url(value: &str) -> bool {
@@ -440,7 +461,7 @@ fn parse_releases(bytes: &[u8]) -> Result<Release> {
 /// text and never interpreted.
 fn history_notes(
     metadata: &[u8],
-    current: (u64, u64),
+    current: Version,
     target: &str,
     target_body: Option<&str>,
     channel: UpdateChannel,
@@ -450,7 +471,7 @@ fn history_notes(
     }
     let target_version = parse_version(target).ok_or(Error::ReleaseVersion)?;
     let releases: Vec<Release> = serde_json::from_slice(metadata).map_err(Error::ReleaseJson)?;
-    let mut shown: Vec<((u64, u64), String, String)> = releases
+    let mut shown: Vec<(Version, String, String)> = releases
         .into_iter()
         .filter(|release| !release.draft)
         // A stable installation never included a prerelease, so its notes are

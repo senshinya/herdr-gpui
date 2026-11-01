@@ -131,6 +131,14 @@ pub(super) async fn sidebar_hosts(
     if viewport != fixture_size(480., 780.) {
         bail!("narrow resize not settled: {viewport:?}");
     }
+    // The label probe follows the optional origin icon as well as the arrow.
+    let icon_room = handle.update(cx, |view, _, _| {
+        if view.config.show_device_icons && view.config.layout.mode.device_icons() {
+            px((view.config.sidebar.size * 0.9).round() + sidebar::HOST_GAP)
+        } else {
+            px(0.)
+        }
+    })?;
     for (step, label, expected) in [
         (0, REMOTE, 0), // collapse unselected host
         (1, REMOTE, 0), // expand
@@ -178,8 +186,9 @@ pub(super) async fn sidebar_hosts(
                     .with_context(|| format!("missing target {label}"))?;
                 let mut point = p.bounds.center();
                 if step < 2 {
-                    point.x =
-                        p.bounds.left() - px(sidebar::HOST_GAP + sidebar::HOST_ARROW_WIDTH / 2.);
+                    point.x = p.bounds.left()
+                        - icon_room
+                        - px(sidebar::HOST_GAP + sidebar::HOST_ARROW_WIDTH / 2.);
                 }
                 if step == 9 {
                     // The title ends at the label column's edge, even with an avatar.
@@ -250,6 +259,7 @@ pub(super) async fn sidebar_hosts(
     // stale truncated font runs as well as host labels left at the default width.
     // Host and agent labels each reserve 57px in the comfortable flat layout:
     // hosts use border + padding + arrow + two gaps + status; agents use their icon.
+    // The optional host origin icon is subtracted from these base label budgets below.
     for (window_width, preferred, host_width, agent_width, host_prefix, agent_prefix) in [
         (
             800.,
@@ -259,7 +269,7 @@ pub(super) async fn sidebar_hosts(
             "Synthetic host",
             "agent-1-with-a",
         ),
-        (360., None, 63., 63., "Synthe", "agent-1"),
+        (360., None, 63., 63., "Synt", "agent-1"),
         (
             800.,
             Some(160.),
@@ -299,6 +309,8 @@ pub(super) async fn sidebar_hosts(
                     (REMOTE, host_prefix, host_width),
                     ("agent-1-with-a-deliberately-long-label", agent_prefix, agent_width),
                 ] {
+                    let expected_width = px(expected_width)
+                        - if name == REMOTE { icon_room } else { px(0.) };
                     let p = cx
                         .global::<PaintedProbes>()
                         .0
@@ -308,8 +320,8 @@ pub(super) async fn sidebar_hosts(
                         || p.glyph_text != p.cached
                         || (p.glyph_text != name && !p.glyph_text.ends_with('\u{2026}'))
                         || !p.glyph_text.starts_with(prefix)
-                        || p.bounds.size.width != px(expected_width)
-                        || p.mask.size.width != px(expected_width)
+                        || p.bounds.size.width != expected_width
+                        || p.mask.size.width != expected_width
                         || p.width > p.bounds.size.width
                     {
                         bail!("resized native label window={window_width} preferred={preferred:?}: {p:?}");

@@ -15,7 +15,13 @@ fn notes(
     channel: UpdateChannel,
 ) -> Result<Option<String>> {
     let listing = serde_json::to_vec(releases).map_err(Error::ReleaseJson)?;
-    history_notes(&listing, current, target, target_body, channel)
+    history_notes(
+        &listing,
+        (current.0, current.1, 0),
+        target,
+        target_body,
+        channel,
+    )
 }
 
 #[test]
@@ -174,7 +180,7 @@ fn release_with_assets(tag: &str, body: &str, assets: usize) -> serde_json::Valu
                 "name": name,
                 "size": 12_345_678u64,
                 "browser_download_url": format!(
-                    "https://github.com/penso/herdr-gpui/releases/download/{tag}/{name}"
+                    "https://github.com/senshinya/herdr-gpui/releases/download/{tag}/{name}"
                 ),
             })
         })
