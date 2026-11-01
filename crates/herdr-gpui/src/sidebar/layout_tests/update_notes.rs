@@ -141,7 +141,7 @@ fn release_notes_open_the_release_page_in_the_browser(cx: &mut gpui::TestAppCont
         cx.simulate_click(button.center(), Modifiers::default());
         assert_eq!(
             cx.opened_url().as_deref(),
-            Some("https://github.com/penso/herdr-gpui/releases/tag/v20261008.1")
+            Some("https://github.com/senshinya/herdr-gpui/releases/tag/v20261008.1")
         );
         // Opening the page is not a menu action: the dialog stays.
         cx.update(|_, cx| assert_eq!(view.read(cx).menu.page, Some(crate::menu::Page::AppUpdate)));

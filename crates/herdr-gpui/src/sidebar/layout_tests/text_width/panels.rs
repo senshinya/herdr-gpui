@@ -435,7 +435,7 @@ pub(super) fn check_app_update(
     cx.simulate_click(releases.center(), Default::default());
     assert_eq!(
         cx.opened_url().as_deref(),
-        Some("https://github.com/penso/herdr-gpui/releases")
+        Some("https://github.com/senshinya/herdr-gpui/releases")
     );
     let close = cx
         .debug_bounds("app-update-close")
