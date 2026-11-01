@@ -18,7 +18,9 @@ fn a_manual_release_keeps_its_browser_action_visible_at_narrow_widths(
     for (width, height) in [(320., 480.), (800., 600.)] {
         cx.simulate_resize(size(px(width), px(height)));
         let (panel, action) = draw_update_state(cx, &view, &state);
-        let action = action.expect("a manual release has a browser action");
+        let Some(action) = action else {
+            panic!("a manual release has a browser action");
+        };
         assert!(action.bottom() <= panel.bottom());
         assert!(action.left() >= panel.left() && action.right() <= panel.right());
         assert!(panel.left() >= px(0.) && panel.right() <= px(width));
