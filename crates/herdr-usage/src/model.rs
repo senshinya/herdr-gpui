@@ -226,7 +226,7 @@ impl Window {
 }
 
 impl Pace {
-    /// `11% in reserve · Lasts until reset`, as CodexBar puts it.
+    /// Compares usage with a steady spend over the quota window.
     pub fn describe(&self, used: f32) -> String {
         if used >= 100. {
             // The header already shows when the window resets.
@@ -234,9 +234,9 @@ impl Pace {
         }
         let margin = self.expected - used;
         let standing = if margin >= 0.5 {
-            format!("{}% in reserve", margin.round())
+            format!("{} points below expected usage", margin.round())
         } else if margin <= -0.5 {
-            format!("{}% in deficit", (-margin).round())
+            format!("{} points above expected usage", (-margin).round())
         } else {
             "On pace".into()
         };

@@ -47,7 +47,7 @@ def package(version, target, binary, launcher, output_dir, notices):
         raise ValueError("Launcher file required")
     companions = [binary.parent / name for name in ("herdr-acp.exe", "herdr-remote-control.exe",
                                                          "herdr-automate.exe", "herdr-nearby.exe",
-                                                         "herdr-core.exe")]
+                                                         "herdr-core.exe", "herdr_tailscale.dll")]
     for companion in companions:
         if not companion.is_file():
             raise ValueError(f"A {companion.name} beside the binary required")

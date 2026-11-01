@@ -41,12 +41,6 @@ impl HerdrWindow {
                     .font_weight(FontWeight::SEMIBOLD)
                     .child(fl!("security-title")),
             )
-            .child(
-                div()
-                    .text_size(small)
-                    .text_color(rgb(theme.muted))
-                    .child(fl!("security-subtitle")),
-            )
             .child(div().flex_1())
             .children(updated.map(|updated| {
                 div()

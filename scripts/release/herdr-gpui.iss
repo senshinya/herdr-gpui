@@ -103,6 +103,7 @@ Source: "{#SourceDir}\herdr-acp.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\herdr-remote-control.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\{#Automate}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\herdr-nearby.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SourceDir}\herdr_tailscale.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; herdr-core keeps running Herdr 2 terminals after the app closes, and Setup
 ; never stops it: a running one is replaced when Windows next restarts.
 Source: "{#SourceDir}\herdr-core.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace uninsrestartdelete

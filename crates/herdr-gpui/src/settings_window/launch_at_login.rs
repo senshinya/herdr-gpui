@@ -82,7 +82,7 @@ impl SettingsWindow {
             "general-launch-at-login",
             fl!("settings-general-launch-at-login"),
         )
-        .description(fl!("settings-general-launch-at-login-description"));
+        .help(fl!("settings-general-launch-at-login-description"));
         // Windows' own switch wins; the app never clears its mark.
         let row = if state == Some(State::DisabledByWindows) {
             row.disabled(fl!("settings-general-launch-at-login-disabled"))

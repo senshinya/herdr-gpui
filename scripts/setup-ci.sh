@@ -53,6 +53,7 @@ case "$(uname -s)" in
         have cargo-deny || packages+=(cargo-deny)
         have git-cliff || packages+=(git-cliff)
         have jq || packages+=(jq)
+        have go || packages+=(go)
         have x86_64-w64-mingw32-gcc || packages+=(mingw-w64)
         # Apple's /usr/bin/python3 is 3.9; the release script tests need 3.11+.
         python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' 2>/dev/null || packages+=(python)
@@ -64,6 +65,8 @@ case "$(uname -s)" in
         ;;
     Linux)
         bash "$root/scripts/install-linux-deps.sh"
+        have go || bash "$root/scripts/install-go-linux.sh" "$tools"
+        export PATH="$tools/go/bin:$PATH"
         if [[ $EUID -eq 0 ]]; then sudo=(); else sudo=(sudo); fi
         "${sudo[@]}" apt-get install --no-install-recommends -y gcc-mingw-w64-x86-64 rsync curl
         have actionlint || install_actionlint
@@ -87,7 +90,7 @@ if ! { [[ -x $nfpm ]] && "$nfpm" --version 2>/dev/null | grep -F "$nfpm_version"
 fi
 
 missing=()
-for tool in cargo actionlint zizmor cargo-deny git-cliff jq x86_64-w64-mingw32-gcc; do
+for tool in go cargo actionlint zizmor cargo-deny git-cliff jq x86_64-w64-mingw32-gcc; do
     have "$tool" || missing+=("$tool")
 done
 python3 -c 'import sys; sys.exit(sys.version_info < (3, 11))' || missing+=('python3 >= 3.11 first on PATH')

@@ -21,7 +21,6 @@ settings-cloud-sprites-forget-token = Forget token
 ## New sprite and Sprites devices.
 
 settings-cloud-sprites-new = New sprite
-settings-cloud-sprites-new-note = Creates a sprite with a generated name, runs Herdr's server there as a service so it is back after every sleep, and adds it as a device.
 settings-cloud-sprites-create = Create sprite
 settings-cloud-sprites-no-window = Open a main Herdr window to create a sprite.
 settings-cloud-sprites-devices = Sprites devices

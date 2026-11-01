@@ -48,21 +48,21 @@ usage-kind = { $kind ->
         [monthly] Monthly
        *[named] { $name }
     }
-usage-limit-left = { $kind ->
+usage-limit-used = { $kind ->
         [session] Session
         [daily] Daily
         [weekly] Weekly
         [monthly] Monthly
        *[named] { $name }
-    } { $left }% left
-usage-left = { $left }% left
+    } { $used }% used
+usage-used = { $used }% used
 usage-resets-in = Resets in { $time }
 usage-pace-ran-out = Ran out
-# Whether spending is ahead of an even pace ($margin percent), then whether
+# Whether spending is ahead of an even pace ($margin percentage points), then whether
 # what is left lasts until the window resets or runs out in $time.
 usage-pace = { $standing ->
-        [reserve] { $margin }% in reserve
-        [deficit] { $margin }% in deficit
+        [reserve] { $margin } points below expected usage
+        [deficit] { $margin } points above expected usage
        *[even] On pace
     } · { $outlook ->
         [runs-out] Runs out in { $time }

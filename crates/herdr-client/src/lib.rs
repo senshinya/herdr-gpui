@@ -35,6 +35,7 @@ mod session;
 pub mod sessions;
 pub mod ssh;
 mod surface_images;
+pub mod tailnet;
 pub mod terminal_attach;
 pub mod text;
 mod transport;

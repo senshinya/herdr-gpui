@@ -27,6 +27,7 @@ pub(crate) enum KeybindingSource {
 #[serde(default)]
 pub(crate) struct DeviceSettings {
     pub(crate) keybindings: KeybindingSource,
+    pub(crate) tailnet: Option<herdr_client::tailnet::Binding>,
     /// The terminal's colors while this device is selected, as any top-level
     /// `theme` value. The sidebar, titlebar, and menus keep the app theme, so
     /// only the terminal tells devices apart. Unset, it is the app theme.
@@ -37,6 +38,9 @@ impl DeviceSettings {
     /// Refuses a theme that could never load, naming the device. Whether a
     /// named file exists is only known once it is read, off the UI thread.
     pub(super) fn validate(&self, device: &str) -> Result<()> {
+        if let Some(binding) = &self.tailnet {
+            binding.validate()?;
+        }
         let Some(theme) = &self.theme else {
             return Ok(());
         };
@@ -123,7 +127,7 @@ impl Config {
 /// Sets one key of `[devices.<profile>]` in the local file, or removes it
 /// with `None`, dropping a device table, and then `[devices]`, left empty.
 /// Comments and every other key survive.
-fn set_device_key(
+pub(super) fn set_device_key(
     profile: &str,
     key: &str,
     value: Option<toml_edit::Item>,

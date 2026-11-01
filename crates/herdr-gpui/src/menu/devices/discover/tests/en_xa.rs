@@ -33,7 +33,7 @@ fn nearby_devices_show_only_messages_under_en_xa() {
         });
         form::settle(cx);
         draw(cx);
-        let data: Vec<String> = [
+        let mut data: Vec<String> = [
             "m4max",
             "m4max.tail1.ts.net",
             "saved",
@@ -41,7 +41,6 @@ fn nearby_devices_show_only_messages_under_en_xa() {
             "m4max.local",
             "nas",
             "ssh://nas.local:2222",
-            "Tailscale",
             "Bonjour",
             "default",
             "WSL",
@@ -50,6 +49,21 @@ fn nearby_devices_show_only_messages_under_en_xa() {
         .into_iter()
         .chain(providers())
         .collect();
-        assert_translated("Add Device > Nearby devices", &recorder.take(), &data);
+        // The text system measures individual glyphs while eliding device names.
+        // These are the known fixture data, not unmarked UI messages.
+        let shown = recorder.take();
+        let measured = shown
+            .iter()
+            .filter(|line| {
+                data.iter().any(|name| match line.strip_suffix('…') {
+                    Some(prefix) => name.starts_with(prefix),
+                    None if line.chars().count() == 1 => name.contains(line.as_str()),
+                    None => false,
+                })
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        data.extend(measured);
+        assert_translated("Add Device > Nearby devices", &shown, &data);
     });
 }

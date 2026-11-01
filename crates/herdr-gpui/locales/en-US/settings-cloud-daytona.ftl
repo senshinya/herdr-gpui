@@ -22,5 +22,4 @@ settings-cloud-daytona-snapshot-placeholder = Optional; Daytona's default snapsh
 
 ## New sandbox and Daytona devices.
 
-settings-cloud-daytona-new-note = Creates a sandbox with a generated name and adds it as a device once it is ready.
 settings-cloud-daytona-devices = Daytona devices

@@ -408,6 +408,8 @@ impl HerdrWindow {
         div()
             .id(SharedString::from(selector.clone()))
             .debug_selector(move || selector.clone())
+            .role(Role::Button)
+            .aria_label(format!("{} · {} · {}", row.title, row.host, row.detail))
             .group(group)
             .relative()
             .h(px(ROW_HEIGHT))

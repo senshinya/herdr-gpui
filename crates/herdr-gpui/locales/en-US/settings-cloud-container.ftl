@@ -1,7 +1,7 @@
 # Settings > Cloud devices > Container. Engine names (Docker, Podman), their
 # versions, and container names stay as they are.
 
-settings-cloud-container-note = Make containers on this computer's Docker or Podman engine and use them as devices. Each has its own home volume, CPU, memory, and process limits, and runs agents as an unprivileged user without access to this computer's files. Containers share this computer's kernel: for code you do not trust, use a VM provider instead.
+settings-cloud-container-note = Containers share this computer’s kernel. Use a VM for untrusted code.
 settings-cloud-container-checking = Checking for Docker or Podman…
 settings-cloud-container-engine-running = { $engine } { $version } is running.
 
@@ -20,7 +20,6 @@ settings-cloud-container-auto-stop-placeholder = never; or 30m, 2h: stop once no
 ## New container and Containers.
 
 settings-cloud-container-new = New container
-settings-cloud-container-new-note = Creates a container with a generated name, pulling the image first if needed, and adds it as a device once Herdr runs in it.
 settings-cloud-container-install = Install Herdr in it
 settings-cloud-container-create = Create container
 settings-cloud-container-no-window = Open a main Herdr window to create a container.

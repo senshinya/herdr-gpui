@@ -109,24 +109,28 @@ pub(super) async fn verify_themes(
                         let Some((_, bounds, true)) = cards.iter().find(|card| card.0 == 0) else {
                             return Ok(None);
                         };
-                        let row: Option<Vec<_>> = (0..=4)
+                        // An isolated home may have only the built-in and
+                        // Herdr Nord choices, without a Ghostty installation.
+                        let row: Option<Vec<_>> = (0..filtered.min(5))
                             .map(|index| cards.iter().find(|card| card.0 == index))
                             .collect();
                         let Some(row) = row else {
                             return Ok(None);
                         };
-                        for pair in row[..4].windows(2) {
+                        for pair in row[..filtered.min(4)].windows(2) {
                             ensure!(
                                 (pair[0].1.top() - pair[1].1.top()).abs() < px(1.)
                                     && pair[0].1.right() < pair[1].1.left(),
                                 "filtered Nord cards did not form four columns: {cards:?}"
                             );
                         }
-                        ensure!(
-                            (row[4].1.left() - bounds.left()).abs() < px(1.)
-                                && row[4].1.top() >= bounds.bottom(),
-                            "filtered Nord card 4 did not wrap to the next row: {cards:?}"
-                        );
+                        if let Some(next) = row.get(4) {
+                            ensure!(
+                                (next.1.left() - bounds.left()).abs() < px(1.)
+                                    && next.1.top() >= bounds.bottom(),
+                                "filtered Nord card 4 did not wrap to the next row: {cards:?}"
+                            );
+                        }
                         ensure!(
                             view.body_scroll.bounds().contains(&bounds.center()),
                             "first native Nord card is outside the body viewport: {bounds:?}"
@@ -137,7 +141,15 @@ pub(super) async fn verify_themes(
                 if let Some(ready) = ready {
                     break ready;
                 }
-                ensure!(Instant::now() < deadline, "native Nord card did not settle");
+                ensure!(
+                    Instant::now() < deadline,
+                    "native Nord card did not settle: {:?}",
+                    settings.update(cx, |view, _, cx| (
+                        view.native_theme_cards(cx),
+                        view.body_scroll.offset(),
+                        view.busy()
+                    ))?
+                );
                 cx.background_executor()
                     .timer(Duration::from_millis(10))
                     .await;

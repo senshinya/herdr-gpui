@@ -65,7 +65,7 @@ impl SettingsWindow {
             "general-language",
             fl!("settings-general-language"),
         )
-        .description(fl!("settings-general-language-description"))
+        .help(fl!("settings-general-language-description"))
         .control(ui::dropdown(
             &self.theme,
             FIELD.selector(),

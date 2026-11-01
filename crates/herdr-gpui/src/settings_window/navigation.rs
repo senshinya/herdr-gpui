@@ -95,12 +95,12 @@ impl SettingsWindow {
     fn group_label(&self, group: Group) -> Div {
         div()
             .debug_selector(move || format!("settings-group-{}", group.slug()))
-            .px(px(10.))
-            .pt(px(10.))
+            .px(px(12.))
+            .pt(px(8.))
             .pb(px(4.))
-            .text_size(px(10.))
+            .text_size(rems(11. / 12.))
             .text_color(rgb(self.theme.subtext()))
-            .child(group.label().to_uppercase())
+            .child(group.label())
     }
 
     fn navigation_row(
@@ -126,19 +126,19 @@ impl SettingsWindow {
             .row()
             .items_center()
             .gap(px(10.))
-            .px(px(10.))
+            .px(px(12.))
             .py(px(6.))
             .rounded(px(corners::CONTROL))
             .cursor_pointer()
-            .when(selected, |el| el.bg(rgb(theme.primary_wash())))
+            .when(selected, |el| el.bg(rgb(theme.active)))
             .hover(|el| el.bg(rgb(theme.active)))
             .child(
                 svg()
                     .path(section.icon())
-                    .size(px(17.))
+                    .size(px(16.))
                     .flex_none()
                     .text_color(rgb(if selected {
-                        theme.primary()
+                        theme.foreground
                     } else {
                         theme.subtext()
                     })),
@@ -169,14 +169,7 @@ impl SettingsWindow {
         } else if let Some(status) = &self.status {
             status.clone()
         } else if pending.is_empty() {
-            match self.section {
-                // Its account fields are a form with their own Save button.
-                #[cfg(feature = "cloud")]
-                Section::CloudDevices => {
-                    fl!("settings-saved-cloud")
-                }
-                _ => fl!("settings-saved"),
-            }
+            String::new()
         } else {
             fl!("settings-unsaved", drafts = pending.join(", "))
         }
@@ -194,7 +187,7 @@ impl SettingsWindow {
             .gap(px(12.))
             .border_t_1()
             .border_color(rgb(self.theme.active))
-            .text_size(px(11.))
+            .text_size(rems(11. / 12.))
             .when(!pending.is_empty() && self.error.is_none(), |footer| {
                 footer.child(
                     div()

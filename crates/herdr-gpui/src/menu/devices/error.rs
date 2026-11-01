@@ -46,10 +46,6 @@ pub enum Error {
     },
     #[error("Saving the device timed out")]
     SetupTimeout,
-    #[error("Tailscale returned an unreadable status: {0}")]
-    TailscaleJson(#[source] serde_json::Error),
-    #[error("Tailscale did not answer in time")]
-    TailscaleTimeout,
     #[error("Setting up a device in a terminal is unavailable on Windows.")]
     TerminalSetupUnavailable,
     // keep-sorted end

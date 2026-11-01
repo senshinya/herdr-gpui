@@ -19,6 +19,9 @@ class NoticeTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        self.write("native/tailscale/go.sum", "pinned Go dependencies")
+        digest = notices.hashlib.sha256((self.root / "native/tailscale/go.sum").read_bytes()).hexdigest()
+        self.write("native/tailscale/THIRD-PARTY-NOTICES.txt", f"Go module notices\ngo.sum SHA-256: {digest}\n")
         self.package = dict(id="dep", name="dep", version="1.0.0", license="MIT",
                             source="registry+https://github.com/rust-lang/crates.io-index",
                             manifest_path=str(self.root / "Cargo.toml"), license_file=None)

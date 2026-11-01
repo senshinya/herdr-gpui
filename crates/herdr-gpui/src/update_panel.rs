@@ -361,20 +361,12 @@ impl HerdrWindow {
                             .bg(accent),
                     )
                     .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .child(
-                                div()
-                                    .text_size(px(font.size * 1.35))
-                                    .font_weight(FontWeight::SEMIBOLD)
-                                    .child(fl!("update-panel-title")),
-                            )
-                            .child(
-                                div()
-                                    .text_color(rgb(theme.muted))
-                                    .child(fl!("update-panel-subtitle")),
-                            ),
+                        div().flex_1().min_w_0().child(
+                            div()
+                                .text_size(px(font.size * 1.35))
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .child(fl!("update-panel-title")),
+                        ),
                     )
                     .child(
                         div()
@@ -488,11 +480,6 @@ impl HerdrWindow {
                                 )
                             },
                         ),
-                    )
-                    .child(
-                        div()
-                            .text_color(rgb(theme.subtext()))
-                            .child(fl!("update-panel-verified-note")),
                     )
                     .when(self.update_preview.is_some(), |body| {
                         body.child(

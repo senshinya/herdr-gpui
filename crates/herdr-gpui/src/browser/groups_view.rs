@@ -765,6 +765,9 @@ impl HerdrWindow {
         let Some(tab) = store(cx).and_then(|store| store.get(id)).cloned() else {
             return;
         };
+        if self.activity_section().is_some() || self.mod_app().is_some() {
+            self.show_activity_panel(crate::sidebar::ActivityPanel::Workspaces, window, cx);
+        }
         let layout = self.layout_for((tab.scope.clone(), tab.workspace_id.clone()));
         let group = group.unwrap_or_else(|| layout.owner(&Pick::Page(id)));
         layout.choose(group, Pick::Page(id));

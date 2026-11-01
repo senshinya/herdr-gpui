@@ -321,7 +321,7 @@ pub struct Destination {
 /// connects. Blocks briefly: call it from a background thread.
 pub fn resolve_destination(target: &str) -> Result<Destination> {
     validate_target(target)?;
-    let mut command = crate::environment::command("ssh");
+    let mut command = crate::tailnet::command(target);
     command.args(["-G", "--", target]);
     let (status, output) = run(&mut command, RESOLVE_TIMEOUT, || false)?;
     if !status.success() {
@@ -461,15 +461,15 @@ pub(super) fn command(target: &str, remote_command: &str) -> Command {
 /// [`command`] checking host keys as `keys` says rather than as the user's
 /// saved choice for `target` does.
 fn command_with(target: &str, remote_command: &str, keys: HostKeys) -> Command {
-    let mut command = noninteractive(keys);
+    let mut command = noninteractive(target, keys);
     command.args(["-o", "ClearAllForwardings=yes", "--", target]);
     command.arg(remote_command);
     command
 }
 
 /// `ssh` with the bridge's connection policy and nothing to connect yet.
-fn noninteractive(keys: HostKeys) -> Command {
-    let mut command = crate::environment::command("ssh");
+fn noninteractive(target: &str, keys: HostKeys) -> Command {
+    let mut command = crate::tailnet::command(target);
     command.args(keys.options()).args(POLICY);
     command
 }
@@ -533,7 +533,7 @@ pub fn forward_command(
         Some(std::net::IpAddr::V4(address)) => address.to_string(),
         Some(std::net::IpAddr::V6(address)) => format!("[{address}]"),
     };
-    let mut command = noninteractive(HostKeys::of(target));
+    let mut command = noninteractive(target, HostKeys::of(target));
     command.args([
         "-N",
         "-o",

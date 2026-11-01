@@ -23,6 +23,8 @@ pub(super) enum Availability {
     Always,
     /// Only while the drafted theme follows the system as a light/dark pair.
     FollowingSystemTheme,
+    TailnetActive,
+    TailnetConnected,
     /// Only on Windows, which has the only platform code for it.
     Windows,
 }
@@ -74,6 +76,25 @@ const fn feature(feature: Feature) -> Entry {
 }
 
 pub(super) const CATALOG: &[Entry] = &[
+    entry(Section::Tailscale, "tailnet-control", "tailnet-control", ""),
+    entry(
+        Section::Tailscale,
+        "tailnet-hostname",
+        "tailnet-hostname",
+        "",
+    ),
+    entry(Section::Tailscale, "tailnet-status", "tailnet-status", "")
+        .only(Availability::TailnetActive),
+    entry(Section::Tailscale, "tailnet-network", "tailnet-network", "")
+        .only(Availability::TailnetConnected),
+    entry(Section::Tailscale, "tailnet-node", "tailnet-node", "")
+        .only(Availability::TailnetConnected),
+    entry(
+        Section::Tailscale,
+        "tailnet-plaintext",
+        "tailnet-plaintext",
+        "tailnet-plaintext-note",
+    ),
     entry(
         Section::Theme,
         "theme-mode",

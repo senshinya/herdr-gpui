@@ -376,7 +376,21 @@ impl OrchestratorView {
             .px_4()
             .py_2()
             .child(look.icon("icons/git-branch.svg", 14., theme.subtext()))
-            .child(div().font_weight(FontWeight::SEMIBOLD).child(title))
+            .child(
+                div()
+                    .font_weight(FontWeight::SEMIBOLD)
+                    .child(match self.tab {
+                        Tab::Issues => "Issues",
+                        Tab::PullRequests => "Pull requests",
+                    }),
+            )
+            .child(
+                div()
+                    .min_w_0()
+                    .truncate()
+                    .text_color(rgb(theme.subtext()))
+                    .child(title),
+            )
             .children(sources)
             .children(no_github)
             .child(div().flex_1())

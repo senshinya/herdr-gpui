@@ -1,10 +1,9 @@
 //! A section with nothing to list says what it is for.
 use crate::orchestrator::{
-    Error, Request, Timing,
+    Request, Timing,
     view::{Look, OrchestratorView, list::Empty, rows::Tab},
 };
 use gpui::{Entity, TestAppContext, VisualTestContext};
-use std::sync::Arc;
 
 /// The view, and the folder its repository's data lives in while it is open.
 pub(super) fn open(
@@ -61,7 +60,14 @@ fn a_project_or_backend_picked_says_the_filters_hide_the_rest(cx: &mut TestAppCo
             view.update(cx, |view, _| {
                 // Settled, so the list is not still loading.
                 for repo in &mut view.repos {
-                    repo.snapshot.error = Some(Arc::new(Error::NoDataDirectory));
+                    repo.snapshot.error = None;
+                    repo.snapshot.repo = Some(
+                        crate::orchestrator::repo::parse(
+                            &repo.request.target,
+                            "common\t/app/.git\nmain\t/app\nbeads\t0\n",
+                        )
+                        .unwrap(),
+                    );
                 }
                 view.tab = tab;
                 view.refresh_rows();

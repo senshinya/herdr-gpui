@@ -31,7 +31,7 @@ rsync -a --delete --exclude target --exclude .git "$root/" "$cache/tree/"
 cat > "$cache/run.sh" <<'INNER'
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
-export PATH="/cache/cargo/bin:$PATH"
+export PATH="/cache/go/bin:/cache/cargo/bin:$PATH"
 export CARGO_HOME=/cache/cargo RUSTUP_HOME=/cache/rustup CARGO_TARGET_DIR=/cache/target
 
 # Reuse CI's dependency list rather than a second copy that can drift. It calls
@@ -65,6 +65,7 @@ if ! command -v cargo >/dev/null; then
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
         | sh -s -- -y --no-modify-path --default-toolchain none >/dev/null 2>&1
 fi
+bash scripts/install-go-linux.sh /cache
 # Installs the pinned toolchain and its clippy component from rust-toolchain.toml.
 rustup show >/dev/null
 # One rustc per 2 GiB. A cold build of this graph at full parallelism exhausts a

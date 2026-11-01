@@ -4,6 +4,8 @@
 
 // i18n: migrated
 mod dispatch;
+#[cfg(all(feature = "integration-test", target_os = "macos"))]
+pub(super) mod native;
 pub(super) mod popover;
 mod render;
 mod requests;

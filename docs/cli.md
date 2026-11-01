@@ -456,3 +456,20 @@ terminal input remains interactive in the same pane. `chat status --json`
 reports `input_mode` (`chat`, `terminal`, or `read_only`) and `session_id`;
 `blocked` status means the running agent needs input. `chat show/hide/toggle`
 still switches the pane presentation, without starting or stopping its agent.
+
+### Embedded Tailscale
+
+`herdr-gpui tailscale [status]` reads the app's embedded connection state,
+network, node and addresses. `tailscale peers [--offset N]` returns at most 64
+peers and a `next` offset in JSON. Offsets are bounded to 1024. Neither command
+prints authorization URLs or private identity material. They accept `--json`
+and `--window ID` and obey the same window/session targeting and exit codes as
+other families.
+
+`tailscale devices` opens the connected network’s searchable device list in
+Settings. It refuses when the embedded node is not connected.
+
+`tailscale connect`, `tailscale disconnect` and `tailscale logout` open
+**Settings > Tailscale** in the caller's window. The user chooses and confirms
+the action there. These commands never authorize, disconnect or delete an
+identity without the user acting in Settings. See [Embedded Tailscale](tailscale.md).

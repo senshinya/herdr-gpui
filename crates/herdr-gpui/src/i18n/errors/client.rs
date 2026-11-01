@@ -169,6 +169,7 @@ impl Localize for Error {
                 fl!("error-client-surface-encoding-not-negotiated")
             }
             Self::SurfaceIdentity => fl!("error-client-surface-identity"),
+            Self::Tailnet(error) => error.localize(),
             Self::TerminalAttach(error) => error.localize(),
             Self::UnsolicitedResponse => fl!("error-client-unsolicited-response"),
             Self::UnsupportedMethod => fl!("error-client-unsupported-method"),

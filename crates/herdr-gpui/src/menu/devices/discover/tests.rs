@@ -4,7 +4,12 @@ mod complete;
 mod en_xa;
 mod form;
 mod local_network;
+mod picker_flow;
 mod sources;
+mod ssh_username;
+mod tailnet;
+mod tailnet_ip;
+mod tailnet_visibility;
 
 fn candidate(source: Source, name: &str, target: &str, hosts: &[&str]) -> Candidate {
     Candidate::new(source, name, target.into(), hosts)
@@ -25,23 +30,16 @@ fn one_machine_reported_by_every_source_is_listed_once() {
     merge(
         &mut list,
         candidate(
-            Source::Tailscale,
-            "studio",
-            "studio.tail1.ts.net",
-            &["studio.tail1.ts.net", "100.64.0.2"],
+            Source::SshConfig,
+            "st",
+            "st",
+            &["st", "studio.local", "100.64.0.2"],
         ),
-    );
-    merge(
-        &mut list,
-        candidate(Source::SshConfig, "st", "st", &["st", "100.64.0.2"]),
     );
     assert_eq!(list.len(), 1);
     assert_eq!(list[0].target, "st", "the user's own alias wins");
     assert_eq!(list[0].name, "st");
-    assert_eq!(
-        list[0].sources,
-        [Source::SshConfig, Source::Tailscale, Source::Bonjour]
-    );
+    assert_eq!(list[0].sources, [Source::SshConfig, Source::Bonjour]);
 }
 
 #[test]
@@ -50,7 +48,7 @@ fn a_less_preferred_source_does_not_replace_the_target() {
     merge(
         &mut list,
         candidate(
-            Source::Tailscale,
+            Source::SshConfig,
             "box",
             "box.tail1.ts.net",
             &["box.tail1.ts.net"],
@@ -61,12 +59,12 @@ fn a_less_preferred_source_does_not_replace_the_target() {
         candidate(Source::Bonjour, "box", "box.local", &["box.local"]),
     );
     assert_eq!(list[0].target, "box.tail1.ts.net");
-    assert_eq!(list[0].sources, [Source::Tailscale, Source::Bonjour]);
+    assert_eq!(list[0].sources, [Source::SshConfig, Source::Bonjour]);
     // A second report of the same machine from the same source keeps the first.
     merge(
         &mut list,
         candidate(
-            Source::Tailscale,
+            Source::SshConfig,
             "box-again",
             "box-again.tail1.ts.net",
             &["box.tail1.ts.net"],
@@ -87,7 +85,7 @@ fn a_report_that_links_two_rows_folds_them_into_one() {
     merge(
         &mut list,
         candidate(
-            Source::Tailscale,
+            Source::SshConfig,
             "lab",
             "lab.tail1.ts.net",
             &["lab.tail1.ts.net", "100.64.0.5"],
@@ -145,7 +143,7 @@ fn local_names_link_bonjour_magic_dns_and_bare_hosts() {
     merge(
         &mut list,
         candidate(
-            Source::Tailscale,
+            Source::SshConfig,
             "studio",
             "studio.tail1.ts.net",
             &["studio.tail1.ts.net"],
@@ -157,7 +155,7 @@ fn local_names_link_bonjour_magic_dns_and_bare_hosts() {
         candidate(Source::SshConfig, "studio", "studio", &["studio"]).with_alias("studio"),
     );
     assert_eq!(list.len(), 1);
-    assert_eq!(list[0].target, "studio");
+    assert_eq!(list[0].target, "studio.tail1.ts.net");
     assert_eq!(list[0].sources, Source::ALL);
 }
 
@@ -194,7 +192,7 @@ fn a_saved_target_hides_its_machine() {
     merge(
         &mut list,
         candidate(
-            Source::Tailscale,
+            Source::SshConfig,
             "box",
             "box.tail1.ts.net",
             &["box.tail1.ts.net", "100.64.0.9"],
@@ -238,8 +236,8 @@ fn source_lists_read_as_prose() {
     let sources = |list: &[Source]| render::sources(list).replace(['\u{2068}', '\u{2069}'], "");
     assert_eq!(sources(&[Source::Bonjour]), "Bonjour");
     assert_eq!(
-        sources(&[Source::Tailscale, Source::Bonjour]),
-        "Tailscale and Bonjour"
+        sources(&[Source::SshConfig, Source::Bonjour]),
+        "SSH config and Bonjour"
     );
-    assert_eq!(sources(&Source::ALL), "SSH config, Tailscale, and Bonjour");
+    assert_eq!(sources(Source::ALL), "SSH config and Bonjour");
 }

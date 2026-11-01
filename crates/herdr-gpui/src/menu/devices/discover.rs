@@ -1,5 +1,5 @@
 //! Suggestions for the Add Device form: SSH hosts advertised over Bonjour,
-//! online Tailscale peers, and Host aliases in `~/.ssh/config`. Each search
+//! and Host aliases in `~/.ssh/config`. Each search
 //! runs every source once on the background executor for a bounded time, and
 //! the open form drains what they find. Nothing here connects to a suggested
 //! host or probes ports: only hosts that announce themselves, or that the
@@ -11,7 +11,6 @@ mod bonjour;
 mod complete;
 mod render;
 mod ssh_config;
-mod tailscale;
 
 use crate::HerdrWindow;
 use gpui::{Context, Task};
@@ -38,24 +37,21 @@ const MAX_NAME: usize = 64;
 const CHANNEL: usize = 64;
 
 /// Where a suggestion came from. The order is the preference for the target a
-/// merged suggestion fills in: the user's own alias carries their SSH options,
-/// and a Tailscale name keeps working away from the local network.
+/// merged suggestion fills in: the user's own alias carries their SSH options.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) enum Source {
     SshConfig,
-    Tailscale,
     Bonjour,
 }
 
 impl Source {
-    const ALL: [Self; 3] = [Self::SshConfig, Self::Tailscale, Self::Bonjour];
+    const ALL: &[Self] = &[Self::SshConfig, Self::Bonjour];
 
     fn name(self) -> String {
         match self {
             Self::SshConfig => fl!("devices-discover-ssh-config"),
             // Products' names.
-            Self::Tailscale => "Tailscale".to_owned(), // i18n: data
-            Self::Bonjour => "Bonjour".to_owned(),     // i18n: data
+            Self::Bonjour => "Bonjour".to_owned(), // i18n: data
         }
     }
 }
@@ -232,7 +228,7 @@ pub(super) enum Event {
 /// Runs one source to completion, sending what it finds and then `Done`.
 pub(super) type Runner = fn(Source, SyncSender<Event>);
 
-/// Unit tests never reach the network, a Tailscale client, or the real home
+/// Unit tests never reach the network or the real home
 /// directory: sources report nothing unless a test injects its own runner.
 #[cfg(not(test))]
 const RUNNER: Runner = run_source;
@@ -297,9 +293,6 @@ fn run_source(source: Source, sender: SyncSender<Event>) {
         Source::SshConfig => ssh_config::hosts().map(|hosts| {
             hosts.into_iter().all(&found);
         }),
-        Source::Tailscale => tailscale::peers().map(|peers| {
-            peers.into_iter().all(&found);
-        }),
         Source::Bonjour => bonjour::browse(
             BROWSE_TIME,
             PERMISSION_WAIT,
@@ -322,7 +315,8 @@ impl HerdrWindow {
         };
         let (sender, events) = mpsc::sync_channel(CHANNEL);
         let sources = Source::ALL
-            .into_iter()
+            .iter()
+            .copied()
             .map(|source| {
                 let sender = sender.clone();
                 cx.background_executor()

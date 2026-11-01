@@ -197,7 +197,14 @@ impl HerdrWindow {
             }
             Source::Host => match &self.menu.device_setup {
                 Some(setup) => {
-                    let focus = setup.fields[0].read(cx).focus.clone();
+                    let focus = if setup.picker.choosing() {
+                        setup.picker.input()
+                    } else {
+                        &setup.fields[0]
+                    }
+                    .read(cx)
+                    .focus
+                    .clone();
                     self.menu.page = Some(Page::AddDevice);
                     window.focus(&focus, cx);
                 }

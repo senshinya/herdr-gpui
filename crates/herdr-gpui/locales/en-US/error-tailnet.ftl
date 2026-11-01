@@ -1,0 +1,26 @@
+# Embedded Tailnet errors. Credential contents and I/O source details remain redacted.
+error-tailnet-client-invalid = Invalid embedded Tailnet device binding
+error-tailnet-client-conflict = This SSH host defines ProxyCommand, ProxyJump, or HostKeyAlias; use a host without conflicting options for the embedded Tailnet
+error-tailnet-client-io = Cannot prepare private Tailnet SSH configuration
+error-tailnet-client-resolve = SSH configuration could not be resolved
+error-tailnet-busy = This Tailscale identity is already in use by another Herdr process
+error-tailnet-closed = Tailscale connection is closed
+error-tailnet-credentials-unavailable = No system credential store is available in this build. Enable 'Allow private file for credentials' in Settings > Tailscale, then connect again.
+error-tailnet-environment = Remove inherited TS_AUTHKEY, TS_AUTH_KEY, TS_CLIENT_SECRET, TS_CLIENT_ID, TS_ID_TOKEN and TS_AUDIENCE before using browser login
+error-tailnet-identity-change = Sign out before changing the Tailscale control server or credential store
+error-tailnet-invalid-config = Invalid Tailscale configuration
+error-tailnet-io = Tailscale I/O failed
+error-tailnet-json = Unreadable embedded Tailscale response
+error-tailnet-limit = Tailscale resource limit reached
+error-tailnet-logout-pending = Sign out did not finish; retry signing out before connecting
+error-tailnet-native-version = Embedded Tailscale ABI mismatch
+error-tailnet-not-ready = Tailscale is not connected
+error-tailnet-path-encoding = Tailscale state path is not valid Unicode
+error-tailnet-peer-unavailable = The Tailscale peer is offline, expired, or no longer visible
+error-tailnet-storage = Tailscale identity storage failed
+error-tailnet-storage-encoding = Invalid Tailscale identity encoding
+error-tailnet-timeout = Tailscale operation timed out
+error-tailnet-worker = Tailscale background worker is unavailable
+error-tailnet-unavailable = Embedded Tailscale is unavailable
+error-tailnet-proxy-arguments = Invalid internal Tailscale proxy arguments
+error-tailnet-path = Cannot access private Tailscale state at { $path }

@@ -70,6 +70,12 @@ impl Read for Reader {
 }
 
 pub struct Writer(UnixStream);
+impl Writer {
+    /// Bounds blocked writes so a worker can observe cancellation.
+    pub fn set_timeout(&mut self, timeout: Option<Duration>) -> io::Result<()> {
+        self.0.set_write_timeout(timeout)
+    }
+}
 
 impl Write for Writer {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {

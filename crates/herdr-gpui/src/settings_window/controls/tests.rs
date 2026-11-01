@@ -24,7 +24,7 @@ use crate::agent_skill::{AgentSkill, Choice};
 use crate::settings_window::tests::{skill_fixture, skill_load};
 
 #[gpui::test]
-fn notification_rows_stack_inside_the_body_and_descriptions_wrap(cx: &mut TestAppContext) {
+fn notification_rows_stack_and_essential_descriptions_still_wrap(cx: &mut TestAppContext) {
     let (view, cx) = cx.add_window_view(skill_fixture);
     for font_size in [12., 24., 48.] {
         for width in [680., 960.] {
@@ -61,20 +61,25 @@ fn notification_rows_stack_inside_the_body_and_descriptions_wrap(cx: &mut TestAp
                 previous_top = title.top();
             }
             if width == 680. {
-                // The delay row is local, so it keeps its description on
-                // every platform. The shared delivery row shows it only where
-                // Herdr's file is writable; elsewhere its reason replaces it.
-                let mut wrapping = vec!["notif-delay-description"];
-                if cfg!(unix) {
-                    wrapping.push("notif-delivery-description");
-                } else {
-                    assert!(cx.debug_bounds("notif-delivery-description").is_none());
+                assert!(cx.debug_bounds("notif-delay-description").is_none());
+                assert!(cx.debug_bounds("notif-delivery-description").is_none());
+                if !cfg!(unix) {
                     assert!(cx.debug_bounds("notif-delivery-reason").is_some());
                 }
-                for id in wrapping {
-                    let note = cx.debug_bounds(id).unwrap_or_else(|| panic!("{id}"));
-                    assert!(note.size.height > px(18.), "narrow {id} must wrap");
-                }
+                view.update(cx, |view, cx| {
+                    view.section = Section::General;
+                    cx.notify();
+                });
+                cx.update(|window, cx| {
+                    crate::sidebar::layout_tests::full_draw(window, cx).clear(cx)
+                });
+                let consequence = cx
+                    .debug_bounds("general-merged-worktrees-description")
+                    .unwrap();
+                assert!(
+                    consequence.size.height > px(18.),
+                    "the deletion consequence must wrap"
+                );
             }
         }
     }

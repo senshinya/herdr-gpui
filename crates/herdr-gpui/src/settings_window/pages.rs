@@ -1,6 +1,6 @@
 //! The behaviour pages: one module per Settings page, each rebuilt from the
 //! shared row and control builders in `ui`.
-mod configuration;
+pub(in crate::settings_window) mod configuration;
 mod fonts;
 mod general;
 mod indicators;
@@ -10,6 +10,7 @@ pub(in crate::settings_window) mod remote_control;
 mod sidebar;
 mod status_bar;
 mod tabs;
+pub(in crate::settings_window) mod tailscale;
 mod theme;
 mod window;
 

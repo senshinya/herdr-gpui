@@ -139,6 +139,17 @@ fn texts(values: &DaytonaFields) -> [&str; 4] {
 }
 
 impl SettingsWindow {
+    pub(super) fn refresh_daytona_appearance(&self, cx: &mut Context<Self>) {
+        if let Some(card) = &self.daytona_card {
+            super::refresh_inputs(
+                card.fields.iter().chain([&card.key]),
+                &self.config,
+                &self.theme,
+                cx,
+            );
+        }
+    }
+
     pub(super) fn open_daytona_card(&mut self, cx: &mut Context<Self>) {
         if self.daytona_card.is_none() {
             self.daytona_card = Some(DaytonaCard::new(&self.config, &self.theme, cx));
@@ -339,9 +350,12 @@ impl SettingsWindow {
             Key::Missing => fl!("settings-cloud-daytona-key-missing"),
         };
         let mut account = self
-            .cloud_card(crate::cloud::name(CloudProvider::Daytona).to_owned())
+            .cloud_card_about(
+                crate::cloud::name(CloudProvider::Daytona).to_owned(),
+                "cloud-daytona-about",
+                fl!("settings-cloud-daytona-note"),
+            )
             .debug_selector(|| "cloud-daytona-card".into())
-            .child(self.control_note(fl!("settings-cloud-daytona-note")))
             .child(div().min_w_0().child(status));
         for (index, (label, _)) in FIELDS.iter().enumerate() {
             account = account.child(
@@ -390,7 +404,6 @@ impl SettingsWindow {
         let mut sandboxes = self
             .cloud_card(fl!("settings-cloud-new-sandbox"))
             .debug_selector(|| "cloud-daytona-new".into())
-            .child(self.control_note(fl!("settings-cloud-daytona-new-note")))
             .child(
                 self.control_switch(
                     "cloud-daytona-install",

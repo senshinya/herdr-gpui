@@ -106,7 +106,7 @@ def build(version, target, archive, output_dir, iscc, sign=False):
         source = Path(temp) / root
         for required in ("herdr-gpui.exe", "herdr-gpui-launcher.exe", "herdr-acp.exe",
                          "herdr-remote-control.exe", "herdr-automate.exe", "herdr-nearby.exe",
-                         "herdr-core.exe"):
+                         "herdr-core.exe", "herdr_tailscale.dll"):
             if not (source / required).is_file():
                 raise ValueError(f"Release zip has no {required}")
         arguments = iscc_arguments(version, target, source, output_dir, sign)
@@ -315,7 +315,7 @@ def check_installation(app, signed_installer):
         raise ValueError(f"Installed app or shortcut has the wrong identity: {identity}")
     if signed_installer is not None:
         check_signed([signed_installer.resolve(), exe, launcher, acp, remote_control, automate,
-                      app / "unins000.exe"])
+                      app / "herdr_tailscale.dll", app / "unins000.exe"])
     if str(app).lower() not in user_path_entries():
         raise ValueError("Installer did not add the app directory to the user PATH")
     check_uninstall_entry(app)

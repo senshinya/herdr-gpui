@@ -40,9 +40,11 @@ run-debug *args:
 
 format:
     cargo fmt --all
+    gofmt -w native/tailscale/*.go
 
 format-check:
     cargo fmt --all -- --check
+    test -z "$(gofmt -l native/tailscale/*.go)"
 
 # Every feature, then none: cloud providers are default features, and a build
 # without them must not keep code only they use.
@@ -138,11 +140,7 @@ install:
 [extension(".cmd")]
 install:
     #!cmd.exe /c
-    cargo install --locked --force --path crates/herdr-gpui --bin herdr-gpui || exit /b 1
-    cargo install --locked --force --path crates/herdr-gpui-launcher || exit /b 1
-    cargo install --locked --force --path crates/herdr-acp || exit /b 1
-    cargo install --locked --force --path crates/herdr-automate || exit /b 1
-    cargo install --locked --force --path crates/herdr-remote-control
+    python scripts/install-windows.py
 
 # Regenerate circular Linux artwork on any platform (Python standard library).
 icons-linux:
@@ -293,7 +291,10 @@ test-mockup-wait:
 test-pr-closure:
     PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_close_low_confidence_prs.py
 
-ci: format-check check-file-size check-sorted check-i18n lint test test-mockup-wait test-pr-closure
+test-tailscale:
+    go -C native/tailscale test -mod=readonly -race ./...
+
+ci: test-tailscale format-check check-file-size check-sorted check-i18n lint test test-mockup-wait test-pr-closure
 
 # Tools are listed in scripts/setup-ci.sh; Docker for lint-linux is only checked.
 # Install the tools local CI-equivalent runs need, on macOS or Ubuntu.

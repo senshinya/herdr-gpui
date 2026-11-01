@@ -28,7 +28,6 @@ settings-cloud-boat-auto-stop-note = Use never to disable auto-stop: billing con
 
 ## New sandbox and Boat devices.
 
-settings-cloud-boat-new-note = Creates a sandbox with a generated name. Its device is saved before setup so an interruption can be retried without creating another sandbox.
 settings-cloud-boat-recover = Recover creation
 # $name is the sandbox's generated name.
 settings-cloud-boat-pending = Pending creation: { $name }. Recover creation reuses the original request and options, even after restarting. Recovery expires after 23 hours; it never silently creates a replacement.

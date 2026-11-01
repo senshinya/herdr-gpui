@@ -359,6 +359,7 @@ impl Default for Theme {
             contrast: Contrast::Standard,
             system_accent: None,
         }
+        .with_contrast(Contrast::Standard)
     }
 }
 
@@ -523,19 +524,22 @@ impl Theme {
             .with_accent(config.accent.color())
     }
 
-    /// High contrast parts selected rows further from the surface and raises
-    /// dim labels to text contrast. Standard leaves the theme as drawn.
+    /// Dim labels always keep text contrast; High also parts selected rows
+    /// further from the surface. Terminal colors remain as the theme defines.
     /// Applying the level the theme already has changes nothing, so a theme
     /// styled once and styled again is not raised twice.
     pub fn with_contrast(mut self, contrast: Contrast) -> Self {
-        if self.contrast == contrast {
-            return self;
+        if self.contrast != contrast {
+            self.contrast = contrast;
+            if contrast == Contrast::High {
+                self.active = mix(self.active, self.foreground, 12);
+            }
         }
-        self.contrast = contrast;
-        if contrast == Contrast::High {
-            self.active = mix(self.active, self.foreground, 12);
-            self.muted = self.ink(self.muted);
-        }
+        self.muted = crate::contrast::ink_on_chrome(
+            self.muted,
+            [self.background, self.surface, self.active],
+            4.5,
+        );
         self
     }
 
@@ -543,7 +547,11 @@ impl Theme {
         let blend = |percent| mix(self.background, self.foreground, percent);
         self.surface = blend(5);
         self.active = blend(12);
-        self.muted = blend(55);
+        self.muted = crate::contrast::ink_on_chrome(
+            blend(55),
+            [self.background, self.surface, self.active],
+            4.5,
+        );
     }
 
     pub(crate) fn builtin(name: &str) -> Option<Self> {

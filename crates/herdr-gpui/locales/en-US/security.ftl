@@ -4,7 +4,6 @@
 # are shown as they are.
 
 security-title = Security
-security-subtitle = Private reports and Dependabot alerts
 security-refresh = Refresh
 security-updating = Updating…
 # When the last read finished: $ago is one of security-ago-* below.

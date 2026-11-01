@@ -376,6 +376,7 @@ pub(crate) struct HerdrWindow {
     pub(crate) system_load: crate::system_load::SystemLoad,
     /// A press on a tab that may lift it for reordering.
     pub(crate) tab_drag: Option<tab_drag::TabDrag>,
+    pub(crate) tailnet_status: status_bar::Tailnet,
     /// A teleport being set up or under way; a move outlives its dialog.
     pub(crate) teleport: Option<crate::teleport::Teleport>,
     /// The workspace a finished teleport keeps steering to until focused.
@@ -578,6 +579,7 @@ impl HerdrWindow {
         };
         let old_tab = focused_tab(&self.live);
         self.poll_endpoints(cx);
+        self.poll_device_workspace(window, cx);
         if self
             .icon_font_notice
             .observe(self.config.icon_font_missing, self.live.surface.as_deref())
@@ -695,6 +697,9 @@ impl HerdrWindow {
         self.poll_overview(cx);
         self.poll_security(cx);
         self.poll_automations(cx);
+        if self.tailnet_status.poll(std::time::Instant::now()) {
+            cx.notify();
+        }
         if self.update_system_load() {
             cx.notify();
         }

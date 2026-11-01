@@ -49,7 +49,7 @@ impl SettingsWindow {
                     fl!("settings-indicators-edge-rail"),
                 )
                 .tag(ui::Source::HerdrUi)
-                .description(fl!("settings-indicators-edge-rail-description"))
+                .help(fl!("settings-indicators-edge-rail-description"))
                 .switch(self.preference_toggle(
                     "indicators-edge-rail-toggle",
                     rail,
@@ -62,6 +62,16 @@ impl SettingsWindow {
                 &fl!("settings-indicators-sets"),
                 Some(ui::Source::HerdrUi),
             ))
+            .child(
+                div()
+                    .row()
+                    .flex_wrap()
+                    .gap(px(12.))
+                    .py(px(8.))
+                    .text_size(rems(10. / 12.))
+                    .text_color(rgb(theme.subtext()))
+                    .children(PREVIEW.map(|(_, message)| div().child(i18n::message(message, &[])))),
+            )
             .child(
                 div()
                     .relative()
@@ -83,7 +93,7 @@ impl SettingsWindow {
     }
 
     /// One set as a card: its name and a radio mark, the five statuses drawn
-    /// with it, and a line on what sets it apart. Clicking picks it.
+    /// with it. The common legend explains their order. Clicking picks it.
     fn set_card(
         &self,
         set: StatusIcons,
@@ -129,27 +139,16 @@ impl SettingsWindow {
                     .py(px(6.))
                     .rounded(px(corners::SMALL))
                     .bg(rgb(theme.background))
-                    .children(PREVIEW.map(|(status, message)| {
+                    .children(PREVIEW.map(|(status, _)| {
                         div()
                             .flex()
                             .flex_col()
                             .items_center()
                             .gap(px(3.))
                             .child(status_indicator(status, font, indicators))
-                            .child(
-                                div()
-                                    .text_size(px(9.5))
-                                    .text_color(rgb(theme.muted))
-                                    .child(i18n::message(message, &[])),
-                            )
                     })),
             )
-            .child(
-                div()
-                    .text_size(px(11.5))
-                    .text_color(rgb(theme.subtext()))
-                    .child(i18n::message(description, &[])),
-            )
+            .aria_description(i18n::message(description, &[]))
     }
 }
 

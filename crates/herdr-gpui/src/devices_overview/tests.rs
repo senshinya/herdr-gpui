@@ -6,6 +6,7 @@ mod en_xa;
 mod history;
 mod model;
 mod narrow_layout;
+mod navigation;
 mod page;
 
 use crate::{

@@ -33,6 +33,8 @@ mod teleport;
 mod version_mismatch;
 mod whats_new;
 mod workspace;
+#[cfg(all(feature = "integration-test", target_os = "macos"))]
+pub(crate) use workspace::native::dialog_steps as native_dialog_steps;
 mod workspace_close;
 mod worktree_note;
 mod worktree_open;

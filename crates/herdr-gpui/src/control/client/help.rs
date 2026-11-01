@@ -128,6 +128,9 @@ fn family(name: &str) -> &'static str {
         "system" => {
             "herdr-gpui system\n    The window's selected host's load, when Herdr UI samples it."
         }
+        "tailscale" => {
+            "herdr-gpui tailscale [status]\nherdr-gpui tailscale peers [--offset N]\n    Read the embedded node and up to 64 peers per page, without login URLs.\nherdr-gpui tailscale devices\n    Open the connected Tailnet device list in Settings.\nherdr-gpui tailscale connect|disconnect|logout\n    Open Tailscale settings; the user confirms the action there."
+        }
         "remote" => {
             "herdr-gpui remote [status]\n    Whether remote control is on and its daemon runs: the addresses it\n    serves, its certificate fingerprint, and paired and connected devices.\nherdr-gpui remote devices\n    The paired devices, with when each was last seen. Exits 4 when there\n    are none.\nherdr-gpui remote pair [--address HTTPS_ORIGIN]\n    Open the pairing dialog in Herdr UI. Tailscale is preferred by default;\n    choose an address in the dialog or pass one from remote status.\n    The QR and its token show only there; the user approves the device there.\nherdr-gpui remote revoke DEVICE\n    Ask in Herdr UI to revoke a paired device, named by its ID or name;\n    the user confirms there.\nherdr-gpui remote restart\n    Restart the daemon from the binary beside Herdr UI, as after a\n    rebuild or update; phones reconnect on their own. Exits 6 while the\n    service is already changing.\n    pair, devices, revoke, and restart exit 1 while remote control is off."
         }

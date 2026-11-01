@@ -16,6 +16,8 @@ mod open_command;
 mod px0;
 mod remote;
 mod security;
+mod tailscale;
+mod tailscale_devices;
 mod ui_panel;
 
 #[test]

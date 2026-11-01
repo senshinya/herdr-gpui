@@ -129,6 +129,12 @@ fn railway_setup_running(cx: &App) -> bool {
 }
 
 impl SettingsWindow {
+    pub(super) fn refresh_railway_appearance(&self, cx: &mut Context<Self>) {
+        if let Some(card) = &self.railway_card {
+            super::refresh_inputs([&card.path, &card.name], &self.config, &self.theme, cx);
+        }
+    }
+
     pub(super) fn open_railway_card(&mut self, cx: &mut Context<Self>) {
         if self.railway_card.is_none() {
             self.railway_card = Some(RailwayCard::new(&self.config, &self.theme, cx));
@@ -365,9 +371,12 @@ impl SettingsWindow {
         let available = ready && crate::cloud::unavailable().is_none();
         let overview = card.overview.as_ref();
         let mut about = self
-            .cloud_card(crate::cloud::name(CloudProvider::Railway).to_owned())
-            .debug_selector(|| "cloud-railway-card".into())
-            .child(self.control_note(fl!("settings-cloud-railway-note")));
+            .cloud_card_about(
+                crate::cloud::name(CloudProvider::Railway).to_owned(),
+                "cloud-railway-about",
+                fl!("settings-cloud-railway-note"),
+            )
+            .debug_selector(|| "cloud-railway-card".into());
         if crate::cloud::unavailable().is_some() {
             about = about.child(self.control_note(fl!("settings-cloud-railway-unavailable")));
         }

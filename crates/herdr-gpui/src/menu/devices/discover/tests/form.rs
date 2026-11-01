@@ -11,16 +11,15 @@ use std::sync::mpsc::SyncSender;
 /// is already saved; Bonjour fails after reporting.
 pub(super) fn report(source: Source, sender: SyncSender<Event>) {
     let found: Vec<Candidate> = match source {
-        Source::SshConfig => Vec::new(),
-        Source::Tailscale => vec![
+        Source::SshConfig => vec![
             candidate(
-                Source::Tailscale,
+                Source::SshConfig,
                 "m4max",
                 "m4max.tail1.ts.net",
                 &["m4max.tail1.ts.net", "100.84.59.116"],
             ),
             candidate(
-                Source::Tailscale,
+                Source::SshConfig,
                 "saved",
                 "saved.tail1.ts.net",
                 &["saved.tail1.ts.net"],
@@ -157,6 +156,8 @@ fn suggestions_merge_hide_saved_devices_and_fill_the_form(cx: &mut gpui::TestApp
         ));
     });
 
+    view.update_in(cx, |view, window, cx| view.show_device_picker(window, cx));
+    cx.update(|window, cx| full_draw(window, cx).clear(cx));
     let row = cx.debug_bounds("device-suggestion-0").unwrap().center();
     cx.simulate_click(row, Modifiers::default());
     assert_eq!(
@@ -164,6 +165,8 @@ fn suggestions_merge_hide_saved_devices_and_fill_the_form(cx: &mut gpui::TestApp
         ("m4max.tail1.ts.net".into(), "m4max".into())
     );
     // A label an earlier suggestion filled in follows the next choice.
+    cx.update(|window, cx| full_draw(window, cx).clear(cx));
+    view.update_in(cx, |view, window, cx| view.show_device_picker(window, cx));
     cx.update(|window, cx| full_draw(window, cx).clear(cx));
     let row = cx.debug_bounds("device-suggestion-1").unwrap().center();
     cx.simulate_click(row, Modifiers::default());
@@ -177,6 +180,8 @@ fn suggestions_merge_hide_saved_devices_and_fill_the_form(cx: &mut gpui::TestApp
         let label = setup.fields[1].clone();
         label.update(cx, |field, cx| field.set_text_selected("My box", cx));
     });
+    cx.update(|window, cx| full_draw(window, cx).clear(cx));
+    view.update_in(cx, |view, window, cx| view.show_device_picker(window, cx));
     cx.update(|window, cx| full_draw(window, cx).clear(cx));
     let row = cx.debug_bounds("device-suggestion-0").unwrap().center();
     cx.simulate_click(row, Modifiers::default());
@@ -194,7 +199,8 @@ fn closing_the_form_ends_the_search(cx: &mut gpui::TestAppContext) {
     cx.update(|_, cx| assert!(view.read(cx).menu.device_setup.is_none()));
 }
 
-fn click_row(cx: &mut VisualTestContext, index: usize) {
+fn click_row(view: &Entity<HerdrWindow>, cx: &mut VisualTestContext, index: usize) {
+    view.update_in(cx, |view, window, cx| view.show_device_picker(window, cx));
     cx.update(|window, cx| full_draw(window, cx).clear(cx));
     let row = cx
         .debug_bounds(Box::leak(
@@ -219,7 +225,7 @@ fn a_typed_label_is_kept_even_when_it_matches_a_suggestion(cx: &mut gpui::TestAp
     settle(cx);
     // `nas` is also a suggestion's name, but the user typed it.
     type_label(&view, cx, "nas");
-    click_row(cx, 0);
+    click_row(&view, cx, 0);
     assert_eq!(
         fields(&view, cx),
         ("m4max.tail1.ts.net".into(), "nas".into())
@@ -230,10 +236,10 @@ fn a_typed_label_is_kept_even_when_it_matches_a_suggestion(cx: &mut gpui::TestAp
 fn editing_a_filled_label_keeps_it(cx: &mut gpui::TestAppContext) {
     let (view, cx) = open(cx, report);
     settle(cx);
-    click_row(cx, 0);
+    click_row(&view, cx, 0);
     cx.run_until_parked();
     type_label(&view, cx, "m4max office");
-    click_row(cx, 1);
+    click_row(&view, cx, 1);
     assert_eq!(
         fields(&view, cx),
         ("ssh://nas.local:2222".into(), "m4max office".into())
@@ -244,24 +250,24 @@ fn editing_a_filled_label_keeps_it(cx: &mut gpui::TestAppContext) {
 fn a_filled_label_still_follows_after_searching_again(cx: &mut gpui::TestAppContext) {
     let (view, cx) = open(cx, report);
     settle(cx);
-    click_row(cx, 0);
+    click_row(&view, cx, 0);
     cx.run_until_parked();
     cx.update(|_, cx| view.update(cx, |view, cx| view.start_device_discovery_with(report, cx)));
     settle(cx);
-    click_row(cx, 1);
+    click_row(&view, cx, 1);
     assert_eq!(
         fields(&view, cx),
         ("ssh://nas.local:2222".into(), "nas".into())
     );
 }
 
-/// Twelve Tailscale peers, more than the list shows at once.
+/// Enough discovered peers to exceed even the expanded picker viewport.
 fn many(source: Source, sender: SyncSender<Event>) {
-    if source == Source::Tailscale {
-        for index in 0..12 {
+    if source == Source::SshConfig {
+        for index in 0..32 {
             let host = format!("peer{index:02}.tail1.ts.net");
             let _ = sender.send(Event::Found(candidate(
-                Source::Tailscale,
+                Source::SshConfig,
                 &format!("peer{index:02}"),
                 &host,
                 &[host.as_str()],
@@ -272,16 +278,32 @@ fn many(source: Source, sender: SyncSender<Event>) {
 }
 
 #[gpui::test]
-fn a_long_list_scrolls_inside_the_form(cx: &mut gpui::TestAppContext) {
+fn a_long_list_uses_the_picker_content_area(cx: &mut gpui::TestAppContext) {
     let (_view, cx) = open(cx, many);
     settle(cx);
     let list = cx.debug_bounds("device-suggestions").unwrap();
     let row = cx.debug_bounds("device-suggestion-0").unwrap();
-    // The list stops at four and a half rows; the rest scroll within it.
+    assert!(list.size.height > row.size.height);
     assert!(
-        (list.size.height - row.size.height * render::MAX_VISIBLE_ROWS).abs() < px(1.),
-        "{list:?} {row:?}"
+        cx.debug_bounds("device-setup-body").is_none(),
+        "a second scrollable form surrounds the list"
     );
-    let last = cx.debug_bounds("device-suggestion-11").unwrap();
+    let last = cx.debug_bounds("device-suggestion-31").unwrap();
     assert!(last.top() > list.bottom());
+    let tabs = cx.debug_bounds("device-picker-tabs").unwrap();
+    for _ in 0..2 {
+        cx.simulate_event(gpui::ScrollWheelEvent {
+            position: list.center(),
+            delta: gpui::ScrollDelta::Pixels(gpui::point(px(0.), px(-10000.))),
+            ..Default::default()
+        });
+        cx.update(|window, cx| full_draw(window, cx).clear(cx));
+    }
+    assert_eq!(
+        cx.debug_bounds("device-picker-tabs"),
+        Some(tabs),
+        "wheel moved the outer dialog"
+    );
+    let last = cx.debug_bounds("device-suggestion-31").unwrap();
+    assert!(last.bottom() <= list.bottom() + px(1.) && last.top() >= list.top());
 }

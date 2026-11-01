@@ -265,7 +265,9 @@ too.
 
 ### From source
 
-Install Rust/rustup and, on macOS, the Xcode command-line tools. The repository
+Install Rust/rustup, Go 1.26.7, a C compiler and, on macOS, the Xcode command-line tools.
+The embedded network build and Windows CGO setup are described in
+[Embedded Tailscale](docs/tailscale.md). The repository
 pins Rust 1.96.1 and GPUI 0.3.6 (the `gpui-pre` snapshot crate); the Rust version
 is declared in `rust-toolchain.toml` and mirrored in `mise.toml`, so `mise install`
 also provisions it.

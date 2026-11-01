@@ -33,7 +33,7 @@ impl SettingsWindow {
             ))
             .child(
                 ui::row(theme, "tabs-layout", fl!("settings-tabs-layout"))
-                    .description(fl!("settings-tabs-layout-description"))
+                    .help(fl!("settings-tabs-layout-description"))
                     .control(ui::segmented(
                         theme,
                         "tabs-layout-control",
@@ -47,7 +47,7 @@ impl SettingsWindow {
             )
             .child(
                 ui::row(theme, "tabs-herdr-2", fl!("settings-tabs-herdr-2"))
-                    .description(fl!("settings-tabs-herdr-2-description"))
+                    .help(fl!("settings-tabs-herdr-2-description"))
                     .switch(self.preference_toggle(
                         "tabs-herdr-2-toggle",
                         self.config.herdr_2_terminals,
@@ -149,7 +149,7 @@ impl SettingsWindow {
                     "tabs-focus-follows-mouse",
                     fl!("settings-tabs-focus-follows-mouse"),
                 )
-                .description(fl!("settings-tabs-focus-follows-mouse-description"))
+                .help(fl!("settings-tabs-focus-follows-mouse-description"))
                 .switch(self.preference_toggle(
                     "tabs-focus-follows-mouse-toggle",
                     self.config.focus_follows_mouse,

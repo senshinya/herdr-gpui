@@ -10,6 +10,7 @@ mod device_theme;
 mod en_xa;
 mod forwards;
 mod menu_width;
+mod new_workspace;
 #[cfg(feature = "azure")]
 mod unsynced;
 
@@ -38,7 +39,9 @@ fn host(view: &crate::HerdrWindow) -> &HostMenu {
 }
 
 #[gpui::test]
-fn right_clicking_a_saved_host_offers_removal_but_local_has_no_menu(cx: &mut TestAppContext) {
+fn right_clicking_a_saved_host_offers_removal_but_local_only_offers_creation(
+    cx: &mut TestAppContext,
+) {
     let (view, cx) = cx.add_window_view(|window, cx| {
         crate::bind_keys(cx);
         let mut view = fixture_window(window, cx);
@@ -50,7 +53,8 @@ fn right_clicking_a_saved_host_offers_removal_but_local_has_no_menu(cx: &mut Tes
     let local = cx.debug_bounds(LOCAL_HEADER).unwrap();
     cx.simulate_mouse_down(local.center(), MouseButton::Right, Modifiers::default());
     cx.simulate_mouse_up(local.center(), MouseButton::Right, Modifiers::default());
-    assert!(view.read_with(cx, |view, _| view.menu.page.is_none()));
+    assert!(view.read_with(cx, |view, _| view.menu.page == Some(Page::Host)));
+    cx.simulate_keystrokes("escape");
 
     let remote = cx.debug_bounds(HOST_HEADER).unwrap();
     cx.simulate_mouse_down(remote.center(), MouseButton::Right, Modifiers::default());
@@ -61,9 +65,9 @@ fn right_clicking_a_saved_host_offers_removal_but_local_has_no_menu(cx: &mut Tes
         // `herdr machine remove` takes the bare catalog ID.
         assert_eq!(
             host(view).saved,
-            Saved::Ssh {
+            Some(Saved::Ssh {
                 profile: "0123456789abcdef0123456789abcdef".into()
-            }
+            })
         );
     });
     cx.update(|window, cx| crate::sidebar::layout_tests::full_draw(window, cx).clear(cx));

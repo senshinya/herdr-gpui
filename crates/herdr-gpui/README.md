@@ -74,8 +74,11 @@ and Linux are suspended), every live SSH link must answer a ping within three
 seconds or reconnect, and every dropped endpoint is dialled at once instead of
 at the end of its backoff.
 The status dot pulses amber during local daemon startup and is red when disconnected.
-Healthy connections leave the status bar quiet; connection indicators live in the
-device picker. Startup, disconnection, and operation errors remain in the status bar.
+Healthy daemon connections leave the status bar quiet; their indicators live in
+the device picker. Startup, disconnection, and operation errors remain in the
+status bar. The separate **Tailnet** item shows the embedded network's state;
+click it to open Tailscale settings. Joining a Tailnet does not establish an SSH
+session or confirm that a particular peer is online.
 
 ## macOS Git permission troubleshooting
 
@@ -306,24 +309,20 @@ released after two minutes. Another client adding the host while a terminal
 setup runs can still create a duplicate. A host refused as already being added
 is still in another Add Device dialog or in a running "Set up" workspace.
 
-Under the SSH target, **Nearby devices** suggests hosts to add. Opening the
-dialog starts one search, shown by a sliding bar, which lasts about ten seconds;
-**Search again** repeats it. Suggestions come from three places, and a machine
-two of them name is listed once:
+Under the SSH target, **Nearby devices** suggests hosts from Bonjour and concrete
+SSH config aliases. A bounded search starts when the dialog opens, lasts about
+ten seconds, and can be repeated with **Search again**. Machines sharing a
+local name/address are merged, preferring the user's SSH alias. Devices already
+saved are not suggested. Bonjour only lists advertised `_ssh._tcp` services;
+SSH ports are not scanned.
 
-- **SSH config**: concrete `Host` aliases in `~/.ssh/config` and the files it
-  `Include`s. Patterns, `Match` blocks, and git hosting services are skipped.
-- **Tailscale**: online peers from the local `tailscale status --json`, by their
-  MagicDNS name, on Linux, macOS, and BSD peers. Phones, TVs, and Windows peers
-  are left out. Tailscale not being installed is not an error.
-- **Bonjour**: hosts that advertise `_ssh._tcp` on the local network, such as a
-  Mac with Remote Login on or a Linux host whose Avahi publishes SSH. This
-  machine is skipped.
-
-Choosing a suggestion fills in the target with the user's own alias when there
-is one, then the Tailscale name, then the Bonjour host. Devices already saved
-are not suggested. Nothing is scanned: a host that runs SSH without announcing
-it, or that is on another subnet, appears only through SSH config or Tailscale.
+**Tailnet Devices** is a separate list from the application's embedded Tailscale
+node. Connect in Settings > Tailscale, then select an online, unexpired peer and
+choose its SSH user/port. The selection retains the network, generation and
+stable peer identity. Windows peers are included and probed like other systems.
+There is no system `tailscale` executable or LocalAPI discovery. A machine may
+appear through both paths; selecting a Tailnet path never falls back to the
+system network. See [Embedded Tailscale](../../docs/tailscale.md).
 On macOS 15 and later the first search asks for Local Network access; see
 [Local Network access](#local-network-access).
 
@@ -1315,8 +1314,8 @@ that already reads well is drawn as authored: on dark themes the status dots
 keep upstream's colors, while light themes such as Catppuccin Latte get darker
 versions of the same hues. **Settings > Theme > High contrast**, or
 top-level `contrast = "high"`, raises that minimum from 3:1 (the WCAG level for
-graphics) to 4.5:1 (the level for text), lifts dim labels to it too, and makes
-selected rows stand further off the surface. Terminal output is never
+graphics) to 4.5:1 (the level for text) and makes selected rows stand further
+off the surface. Dim text already keeps a 4.5:1 minimum in standard mode. Terminal output is never
 adjusted; programs keep the colors they asked for.
 
 On Windows, top-level `accent = "system"` takes the app's own accent (the

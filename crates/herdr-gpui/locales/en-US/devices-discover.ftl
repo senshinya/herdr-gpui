@@ -5,11 +5,6 @@ devices-discover-waiting = Waiting for macOS to allow Herdr on your local networ
 # $sources lists where the search looks, such as "SSH config, Tailscale, and
 # Bonjour".
 devices-discover-searching = Searching { $sources }…
-devices-discover-found = { $count ->
-        [0] Search finished. No devices found.
-        [one] Search finished. Found { $count } device.
-       *[other] Search finished. Found { $count } devices.
-    }
 devices-discover-again = Search again
 # Where a host was found: the user's ~/.ssh/config. Tailscale and Bonjour
 # keep their names.

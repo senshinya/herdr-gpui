@@ -20,5 +20,3 @@ error-devices-setup-state-directory = Herdr UI has no state directory.
 error-devices-setup-paths = The setup paths must be UTF-8.
 error-devices-setup-windows = Setting up a device in a terminal is unavailable on Windows.
 error-devices-setup-timeout = Saving the device timed out
-error-devices-tailscale-json = Tailscale returned an unreadable status: { $error }
-error-devices-tailscale-timeout = Tailscale did not answer in time

@@ -56,6 +56,7 @@ pub(crate) mod tab_layout;
     feature = "sprites"
 ))]
 mod table;
+mod tailscale;
 pub(crate) use sidebar_style::parse_hex;
 mod theme;
 mod updates;
@@ -301,6 +302,7 @@ pub struct Config {
     /// How tab strips draw their tabs, from View > Tab Layout.
     pub tab_layout: TabLayoutMode,
     pub tabs: FontConfig,
+    pub tailscale: herdr_remote::tailscale::Config,
     pub terminal: FontConfig,
     /// Blank space around every terminal's cells.
     pub terminal_padding: Padding,
@@ -474,6 +476,7 @@ impl Default for Config {
             // Tabs are terminal chrome, so they read in the monospace face the
             // sidebar and terminal use, as they do in the reference UI.
             tabs: font(monospace, 12.0),
+            tailscale: herdr_remote::tailscale::Config::default(),
             terminal: font(monospace, 14.0),
             terminal_padding: Padding::default(),
             theme: "Default".into(),
@@ -555,6 +558,7 @@ struct Settings {
     status_icons: Option<status_icons::SavedIcons>,
     tab_layout: TabLayoutMode,
     tabs: FontSettings,
+    tailscale: herdr_remote::tailscale::Config,
     terminal: FontSettings,
     theme: Option<String>,
     ui: FontSettings,
@@ -918,6 +922,11 @@ impl Config {
         config.tab_layout = settings.tab_layout;
         settings.ssh.check()?;
         config.ssh = settings.ssh;
+        settings
+            .tailscale
+            .validate()
+            .map_err(crate::tailnet::Error::from)?;
+        config.tailscale = settings.tailscale;
         let (status_icons, legacy_rail) = status_icons::SavedIcons::resolve(settings.status_icons);
         config.status_icons = status_icons;
         config.edge_rail = settings.edge_rail.unwrap_or(legacy_rail);

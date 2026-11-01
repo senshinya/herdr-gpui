@@ -61,8 +61,7 @@ impl Ui {
         div().px(px(8.)).py(px(6.)).flex().flex_col().gap(px(4.))
     }
 
-    /// `Weekly 89% left`, its reset, a bar of what is left with a tick where
-    /// an even spend would be, and whether the rest lasts.
+    /// Usage, reset time, and an increasing meter, with the steady-use mark.
     pub fn limit(&self, limit: &Limit) -> AnyElement {
         let pace = limit.pace(self.now);
         self.block()
@@ -71,7 +70,24 @@ impl Ui {
                     .flex()
                     .justify_between()
                     .gap(px(8.))
-                    .child(self.heading(text::left_heading(limit)))
+                    .id(SharedString::from(format!(
+                        "usage-limit-{}",
+                        limit.kind.title()
+                    )))
+                    .role(Role::Group)
+                    .when_some(pace, |header, pace| {
+                        let text = SharedString::from(text::pace(&pace, limit.used));
+                        let (foreground, surface) = (self.theme.foreground, self.theme.surface);
+                        header.aria_description(text.clone()).tooltip(move |_, cx| {
+                            cx.new(|_| super::Hint {
+                                text: text.clone(),
+                                foreground,
+                                surface,
+                            })
+                            .into()
+                        })
+                    })
+                    .child(self.heading(text::used_heading(limit)))
                     .children(limit.resets_in(self.now).map(|left| {
                         div()
                             .flex_none()
@@ -80,13 +96,16 @@ impl Ui {
                             .child(text::resets_in(left))
                     })),
             )
-            .child(self.bar(100. - limit.used, limit.used, pace))
-            .children(pace.map(|pace| {
-                div()
-                    .text_size(self.small())
-                    .text_color(self.muted())
-                    .child(text::pace(&pace, limit.used))
-            }))
+            .child(self.bar(limit.used, limit.used, pace))
+            .children(
+                pace.filter(|pace| pace.runs_out.is_some() || limit.used >= 100.)
+                    .map(|pace| {
+                        div()
+                            .text_size(self.small())
+                            .text_color(self.muted())
+                            .child(text::pace(&pace, limit.used))
+                    }),
+            )
             .into_any_element()
     }
 
@@ -202,7 +221,7 @@ impl Ui {
                     .top(px(-2.))
                     .h(px(10.))
                     .w(px(2.))
-                    .left(relative((100. - pace.expected).clamp(0., 100.) / 100.))
+                    .left(relative(pace.expected.clamp(0., 100.) / 100.))
                     .bg(rgb(theme.foreground))
             }))
     }

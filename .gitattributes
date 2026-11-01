@@ -12,3 +12,8 @@ Cargo.lock merge=cargo-lock
 # The daemon's Rust tests compare the native app's JSON fixtures byte for
 # byte with what they write, so a Windows checkout must not turn LF to CRLF.
 ios/HerdrRemoteCore/Tests/HerdrRemoteCoreTests/Fixtures/** text eol=lf
+
+# Preserve source license evidence verbatim, including its trailing whitespace.
+native/tailscale/LLVM-RUNTIME-LICENSE.txt -whitespace
+native/tailscale/MINGW-RUNTIME-LICENSE.txt -whitespace
+native/tailscale/THIRD-PARTY-NOTICES.txt -whitespace

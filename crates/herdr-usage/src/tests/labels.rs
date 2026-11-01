@@ -43,10 +43,16 @@ fn pace_compares_use_with_an_even_spend() {
     let window =
         |used, left: Duration| Window::new(Kind::Weekly, used, Some(now + left), Some(WEEK));
     let pace = window(20., WEEK / 2).pace(now).unwrap();
-    assert_eq!(pace.describe(20.), "30% in reserve · Lasts until reset");
+    assert_eq!(
+        pace.describe(20.),
+        "30 points below expected usage · Lasts until reset"
+    );
     let pace = window(50., WEEK * 3 / 4).pace(now).unwrap();
     assert_eq!(pace.runs_out, Some(WEEK / 4));
-    assert_eq!(pace.describe(50.), "25% in deficit · Runs out in 1d 18h");
+    assert_eq!(
+        pace.describe(50.),
+        "25 points above expected usage · Runs out in 1d 18h"
+    );
     assert_eq!(
         window(49.8, WEEK / 2).pace(now).unwrap().describe(49.8),
         "On pace · Lasts until reset"

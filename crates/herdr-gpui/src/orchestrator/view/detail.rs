@@ -365,9 +365,10 @@ impl OrchestratorView {
     fn render_description(&self, item: &Item) -> AnyElement {
         let look = &self.look;
         let body = item.description.as_deref().unwrap_or("");
-        let content = if body.trim().is_empty() {
-            look.muted("No description.").into_any_element()
-        } else {
+        if body.trim().is_empty() {
+            return div().into_any_element();
+        }
+        let content = {
             let lines = self.description.lines(body);
             release_notes::render("orchestrator-description", &lines, &look.theme, &look.mono)
                 .into_any_element()
@@ -390,7 +391,6 @@ impl OrchestratorView {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let look = &self.look;
-        let theme = &look.theme;
         let mut column = div()
             .id("orchestrator-runs")
             .flex_1()
@@ -409,14 +409,7 @@ impl OrchestratorView {
             }
             column = column.child(self.run_card(runs, *row, position == 0, cx));
         }
-        column
-            .child(
-                div()
-                    .text_size(look.small())
-                    .text_color(rgb(theme.muted))
-                    .child("Status comes from each host's Herdr snapshot. Runs started by agent-launcher are shown here; it alone updates them."),
-            )
-            .into_any_element()
+        column.into_any_element()
     }
 
     fn run_card(&self, runs: &Runs<'_>, row: RunRow, current: bool, cx: &mut Context<Self>) -> Div {

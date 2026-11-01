@@ -165,6 +165,7 @@ impl Connection {
                 timeout: None,
             },
             Writer {
+                timeout: None,
                 closed: Arc::clone(&self.closed),
                 pipe: Arc::clone(&self.pipe),
             },
@@ -225,8 +226,23 @@ impl Read for Reader {
 }
 
 pub struct Writer {
+    timeout: Option<Duration>,
     closed: Arc<AtomicBool>,
     pipe: Arc<End>,
+}
+
+impl Writer {
+    /// Bounded server writes use the maintained pipe wrapper's nonblocking
+    /// mode. The client stays on its original identification-only handle.
+    pub fn set_timeout(&mut self, timeout: Option<Duration>) -> io::Result<()> {
+        match &*self.pipe {
+            End::Server(pipe) => pipe.set_nonblocking(timeout.is_some())?,
+            End::Client(_) if timeout.is_some() => return Err(io::ErrorKind::Unsupported.into()),
+            End::Client(_) => {}
+        }
+        self.timeout = timeout;
+        Ok(())
+    }
 }
 
 impl Write for Writer {
@@ -234,7 +250,29 @@ impl Write for Writer {
         if self.closed.load(Ordering::Acquire) {
             return Err(io::ErrorKind::BrokenPipe.into());
         }
-        (&*self.pipe).write(buf)
+        let Some(timeout) = self.timeout else {
+            return (&*self.pipe).write(buf);
+        };
+        if buf.is_empty() {
+            return Ok(0);
+        }
+        let deadline = Instant::now() + timeout;
+        loop {
+            if self.closed.load(Ordering::Acquire) {
+                return Err(io::ErrorKind::BrokenPipe.into());
+            }
+            match (&*self.pipe).write(buf) {
+                Ok(0) => {}
+                Err(error)
+                    if error.kind() == io::ErrorKind::WouldBlock
+                        || error.raw_os_error() == Some(232) => {}
+                result => return result,
+            }
+            if Instant::now() >= deadline {
+                return Err(io::ErrorKind::TimedOut.into());
+            }
+            thread::sleep(RETRY);
+        }
     }
 
     /// Flushing a pipe waits until the peer has read everything, which a

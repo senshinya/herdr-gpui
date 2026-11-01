@@ -6,6 +6,7 @@ use std::sync::Arc;
 mod command_chip;
 mod fold;
 mod narrow_window;
+mod recovery;
 mod stack;
 
 fn set_diagnostic(

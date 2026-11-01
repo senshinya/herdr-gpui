@@ -176,6 +176,12 @@ impl HerdrWindow {
             .flex_col()
             .border_l_1()
             .border_color(rgb(theme.active))
+            .child(
+                self.render_review_destination(id, review, cx)
+                    .p_2()
+                    .border_b_1()
+                    .border_color(rgb(theme.active)),
+            )
             .children(composer)
             .child(
                 div()
@@ -189,7 +195,7 @@ impl HerdrWindow {
                             div()
                                 .p_2()
                                 .text_color(rgb(theme.muted))
-                                .child("Click a line or a file name to note what should change."),
+                                .child("Select a line to add a note."),
                         )
                     }),
             )
@@ -247,5 +253,69 @@ impl HerdrWindow {
             Some(PANEL_SHARE),
             cx,
         )
+    }
+    fn render_review_destination(&self, id: TabId, review: &Review, cx: &App) -> Stateful<Div> {
+        let theme = &self.theme;
+        let context = cx
+            .try_global::<crate::browser::Store>()
+            .and_then(|store| store.get(id))
+            .map(|tab| {
+                let endpoint = self
+                    .endpoints
+                    .iter()
+                    .find(|endpoint| crate::browser::scope(endpoint) == tab.scope);
+                let host =
+                    endpoint.map_or("Unavailable device", |endpoint| endpoint.label.as_str());
+                let workspace = endpoint
+                    .and_then(|endpoint| endpoint.live.snapshot.as_ref())
+                    .and_then(|snapshot| {
+                        snapshot
+                            .workspaces
+                            .iter()
+                            .find(|workspace| workspace.workspace_id == tab.workspace_id)
+                    })
+                    .map_or(tab.workspace_id.as_str(), |workspace| {
+                        workspace.label.as_str()
+                    });
+                format!(
+                    "{} · {}",
+                    crate::notifications::safe_text(host, 80),
+                    crate::notifications::safe_text(workspace, 80)
+                )
+            })
+            .unwrap_or_else(|| "Unavailable workspace".into());
+        let destination = match &review.agent {
+            Some(agent) => format!(
+                "Notes to {} · {} · {}",
+                agent.label,
+                context,
+                crate::notifications::safe_text(&agent.pane_id, 80)
+            ),
+            None => "No agent in this workspace; notes can be copied".into(),
+        };
+        let label = review.agent.as_ref().map_or_else(
+            || "No agent in this workspace".to_owned(),
+            |agent| format!("To {} · {}", agent.label, context),
+        );
+        let destination_hint = SharedString::from(destination.clone());
+        let (foreground, surface) = (theme.foreground, theme.surface);
+        div()
+            .id("review-destination")
+            .debug_selector(|| "review-destination".into())
+            .role(Role::Label)
+            .aria_label(destination)
+            .min_w_0()
+            .max_w_full()
+            .truncate()
+            .tooltip(move |_, cx| {
+                cx.new(|_| crate::usage::Hint {
+                    text: destination_hint.clone(),
+                    foreground,
+                    surface,
+                })
+                .into()
+            })
+            .text_color(rgb(theme.muted))
+            .child(label)
     }
 }

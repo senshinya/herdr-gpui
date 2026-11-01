@@ -50,6 +50,7 @@ mod root;
 mod setup_relay;
 mod sound;
 mod system_load;
+mod tailnet;
 mod terminal_attach;
 mod updater;
 mod usage;

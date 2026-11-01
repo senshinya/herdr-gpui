@@ -165,7 +165,7 @@ impl SettingsWindow {
             .child(
                 ui::row(theme, "sidebar-layout", fl!("settings-sidebar-layout"))
                     .tag(ui::Source::HerdrUi)
-                    .description(fl!("settings-sidebar-layout-description"))
+                    .help(fl!("settings-sidebar-layout-description"))
                     .control(self.layout_dropdown(ready, cx)),
             )
             .child(
@@ -174,7 +174,7 @@ impl SettingsWindow {
                     "sidebar-activity-bar",
                     fl!("settings-sidebar-activity-bar-title"),
                 )
-                .description(fl!("settings-sidebar-activity-bar-hint"))
+                .help(fl!("settings-sidebar-activity-bar-hint"))
                 .switch(
                     ui::toggle(
                         theme,
@@ -195,7 +195,7 @@ impl SettingsWindow {
                     "sidebar-automations",
                     fl!("settings-sidebar-automations-title"),
                 )
-                .description(fl!("settings-sidebar-automations-hint"))
+                .help(fl!("settings-sidebar-automations-hint"))
                 .switch(
                     ui::toggle(
                         theme,
@@ -212,7 +212,7 @@ impl SettingsWindow {
             )
             .child(
                 ui::row(theme, "sidebar-select", fl!("settings-sidebar-select"))
-                    .description(fl!("settings-sidebar-select-description"))
+                    .help(fl!("settings-sidebar-select-description"))
                     .control(ui::segmented(
                         theme,
                         "sidebar-select-control",
@@ -239,7 +239,7 @@ impl SettingsWindow {
                     "sidebar-device-footer",
                     fl!("settings-sidebar-device-footer"),
                 )
-                .description(fl!("settings-sidebar-device-footer-description"))
+                .help(fl!("settings-sidebar-device-footer-description"))
                 .control(ui::segmented(
                     theme,
                     "sidebar-device-footer-control",
@@ -263,7 +263,7 @@ impl SettingsWindow {
                     "sidebar-change-counts",
                     fl!("settings-sidebar-change-counts"),
                 )
-                .description(fl!("settings-sidebar-change-counts-description"))
+                .help(fl!("settings-sidebar-change-counts-description"))
                 .control(ui::segmented(
                     theme,
                     "sidebar-change-counts-control",
@@ -289,7 +289,7 @@ impl SettingsWindow {
                     "sidebar-show-agents",
                     fl!("settings-sidebar-show-agents"),
                 )
-                .description(fl!("settings-sidebar-show-agents-description"))
+                .help(fl!("settings-sidebar-show-agents-description"))
                 .switch(
                     ui::toggle(
                         theme,
@@ -309,7 +309,7 @@ impl SettingsWindow {
                     "sidebar-show-agents-header",
                     fl!("settings-sidebar-show-agents-header"),
                 )
-                .description(fl!("settings-sidebar-agents-header-hint"))
+                .help(fl!("settings-sidebar-agents-header-hint"))
                 .switch(self.preference_toggle(
                     "sidebar-show-agents-header-toggle",
                     self.config.show_agents_header,
@@ -323,7 +323,7 @@ impl SettingsWindow {
                     "sidebar-agents-placement",
                     fl!("settings-sidebar-agents-placement"),
                 )
-                .description(fl!("settings-sidebar-agents-placement-description"))
+                .help(fl!("settings-sidebar-agents-placement-description"))
                 .control(ui::segmented(
                     theme,
                     "sidebar-agents-placement-control",
@@ -350,7 +350,7 @@ impl SettingsWindow {
                     "sidebar-show-search",
                     fl!("settings-sidebar-show-search"),
                 )
-                .description(fl!("settings-sidebar-show-search-description"))
+                .help(fl!("settings-sidebar-show-search-description"))
                 .switch(self.preference_toggle(
                     "sidebar-show-search-toggle",
                     self.config.show_sidebar_search,
@@ -364,7 +364,7 @@ impl SettingsWindow {
                     "sidebar-repository-icons",
                     fl!("settings-sidebar-repository-icons"),
                 )
-                .description(fl!("settings-sidebar-repository-icons-description"))
+                .help(fl!("settings-sidebar-repository-icons-description"))
                 .switch(self.preference_toggle(
                     "sidebar-repository-icons-toggle",
                     self.config.show_repository_icons,
@@ -378,7 +378,7 @@ impl SettingsWindow {
                     "sidebar-device-icons",
                     fl!("settings-sidebar-device-icons"),
                 )
-                .description(fl!("settings-sidebar-device-icons-description"))
+                .help(fl!("settings-sidebar-device-icons-description"))
                 .switch(self.preference_toggle(
                     "sidebar-device-icons-toggle",
                     self.config.show_device_icons,
@@ -388,7 +388,7 @@ impl SettingsWindow {
             )
             .child(
                 ui::row(theme, "sidebar-gpu-load", fl!("settings-sidebar-gpu-load"))
-                    .description(fl!("settings-sidebar-gpu-load-description"))
+                    .help(fl!("settings-sidebar-gpu-load-description"))
                     .switch(self.preference_toggle(
                         "sidebar-gpu-load-toggle",
                         self.config.show_sidebar_gpu_load,
@@ -517,7 +517,7 @@ impl SettingsWindow {
         let view = cx.entity().downgrade();
         let (title, description) = spacing.messages();
         ui::row(&self.theme, spacing.row(), i18n::message(title, &[]))
-            .description(i18n::message(description, &[]))
+            .help(i18n::message(description, &[]))
             .control(ui::number(
                 &self.theme,
                 ui::Number {

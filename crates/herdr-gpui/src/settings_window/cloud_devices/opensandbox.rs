@@ -139,6 +139,17 @@ impl OpenSandboxCard {
 }
 
 impl SettingsWindow {
+    pub(super) fn refresh_opensandbox_appearance(&self, cx: &mut Context<Self>) {
+        if let Some(card) = &self.opensandbox_card {
+            super::refresh_inputs(
+                card.fields.iter().chain([&card.token]),
+                &self.config,
+                &self.theme,
+                cx,
+            );
+        }
+    }
+
     pub(super) fn open_opensandbox_card(&mut self, cx: &mut Context<Self>) {
         if self.opensandbox_card.is_none() {
             self.opensandbox_card = Some(OpenSandboxCard::new(&self.config, &self.theme, cx));
@@ -342,12 +353,15 @@ impl SettingsWindow {
             Token::Missing => fl!("settings-cloud-opensandbox-key-missing"),
         };
         let account = self
-            .cloud_card(fl!(
-                "settings-cloud-experimental",
-                provider = crate::cloud::name(CloudProvider::OpenSandbox)
-            ))
+            .cloud_card_about(
+                fl!(
+                    "settings-cloud-experimental",
+                    provider = crate::cloud::name(CloudProvider::OpenSandbox)
+                ),
+                "cloud-opensandbox-about",
+                fl!("settings-cloud-opensandbox-note"),
+            )
             .debug_selector(|| "cloud-opensandbox-card".into())
-            .child(self.control_note(fl!("settings-cloud-opensandbox-note")))
             .child(div().min_w_0().child(status))
             .child(self.cloud_field(
                 i18n::message(FIELDS[0].0, &[]),
@@ -396,7 +410,6 @@ impl SettingsWindow {
         let mut new = self
             .cloud_card(fl!("settings-cloud-new-sandbox"))
             .debug_selector(|| "cloud-opensandbox-new".into())
-            .child(self.control_note(fl!("settings-cloud-opensandbox-new-note")))
             .child(
                 self.control_switch(
                     "cloud-opensandbox-install",

@@ -40,10 +40,6 @@ impl Localize for Error {
                 detail = detail.as_str()
             ),
             Self::SetupTimeout => fl!("error-devices-setup-timeout"),
-            Self::TailscaleJson(error) => {
-                fl!("error-devices-tailscale-json", error = error.to_string())
-            }
-            Self::TailscaleTimeout => fl!("error-devices-tailscale-timeout"),
             Self::TerminalSetupUnavailable => fl!("error-devices-setup-windows"),
         }
     }

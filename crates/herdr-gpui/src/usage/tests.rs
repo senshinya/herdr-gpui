@@ -11,8 +11,10 @@ mod footer_fit;
 mod icons;
 mod keychain_grants;
 mod section;
+mod status_bar_priority;
 mod status_bar_room;
 mod text;
+mod used_rounding;
 
 fn provider(id: &str) -> Provider {
     registry::find(id).unwrap()

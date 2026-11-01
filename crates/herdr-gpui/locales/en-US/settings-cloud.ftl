@@ -20,8 +20,8 @@ settings-cloud-new-sandbox = New sandbox
 settings-cloud-create-sandbox = Create sandbox
 settings-cloud-finish-setup = Finish setup
 # A job the main window runs; $name is the new device's name.
-settings-cloud-creating = Creating { $name }. The device picker shows its progress.
-settings-cloud-setting-up =Setting up { $name }. The device picker shows its progress.
+settings-cloud-creating = Creating { $name }…
+settings-cloud-setting-up =Setting up { $name }…
 settings-cloud-no-window-sandbox = Open a main Herdr window to create a sandbox.
 # An account's API key or token, kept in the credential store.
 settings-cloud-api-key = API key
@@ -42,7 +42,7 @@ settings-cloud-delete-failed = Could not delete { $name }: { $error }
 ## New device setup.
 
 settings-cloud-setup-run = Run the setup script when it connects
-settings-cloud-setup-note = Runs once, in a setup tab, the first time a new cloud device connects: the agents switched on here, then the setup script from [cloud] in the config file. A provider's table, such as [cloud.coder], replaces either.
+settings-cloud-setup-note = Runs once on each new device, after installing the selected agents.
 # $agent is the agent's product name, such as Claude Code.
 settings-cloud-setup-install = Install { $agent }
 settings-cloud-setup-none = No setup script of your own.

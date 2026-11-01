@@ -7,6 +7,7 @@ use std::{
 };
 
 use super::*;
+mod bounded;
 
 const WAIT: Duration = Duration::from_secs(10);
 

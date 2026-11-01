@@ -18,8 +18,8 @@ mod windows;
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Contrast {
-    /// Colored marks reach 3:1, the WCAG minimum for meaningful graphics, and
-    /// the theme's chrome is left as drawn.
+    /// Colored marks reach 3:1, the WCAG minimum for meaningful graphics.
+    /// Dim text independently keeps the text minimum of 4.5:1.
     #[default]
     Standard,
     /// Colored marks and dim labels reach 4.5:1, the WCAG minimum for text,

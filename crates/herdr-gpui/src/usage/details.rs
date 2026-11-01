@@ -77,7 +77,7 @@ fn daily_spend(daily: &OpenaiDaily, ui: &Ui) -> Div {
 }
 
 /// Each other Claude account claude-swap manages, under a heading: its name
-/// and note, then a bar of what is left per window.
+/// and note, then a bar of what is used per window.
 fn other_accounts(others: &[ClaudeAccount], ui: &Ui) -> Div {
     ui.block()
         .child(ui.heading(fl!("usage-other-accounts")))
@@ -150,7 +150,7 @@ fn window(limit: &Window, ui: &Ui) -> Div {
         .child(
             div()
                 .flex_1()
-                .child(ui.bar(100. - limit.used, limit.used, limit.pace(ui.now))),
+                .child(ui.bar(limit.used, limit.used, limit.pace(ui.now))),
         )
         .child(
             div()
@@ -158,6 +158,6 @@ fn window(limit: &Window, ui: &Ui) -> Div {
                 .flex_none()
                 .flex()
                 .justify_end()
-                .child(text::left(limit)),
+                .child(text::used(limit)),
         )
 }

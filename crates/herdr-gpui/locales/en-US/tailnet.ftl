@@ -1,0 +1,51 @@
+tailnet-status = Connection
+tailnet-bar-off = Tailnet · Off
+tailnet-bar-disconnected = Tailnet · Disconnected
+tailnet-bar-connecting = Tailnet · Connecting…
+tailnet-bar-disconnecting = Tailnet · Disconnecting…
+tailnet-bar-needs-login = Tailnet · Sign in
+tailnet-bar-needs-approval = Tailnet · Awaiting approval
+tailnet-bar-connected = Tailnet · Connected
+tailnet-bar-failed = Tailnet · Failed
+tailnet-bar-open-settings = Open Tailscale connection settings
+tailnet-bar-short-disconnecting = Disconnecting…
+tailnet-bar-short-login = Sign in
+tailnet-bar-short-approval = Awaiting approval
+tailnet-bar-short-failed = Failed
+tailnet-network = Network
+tailnet-node = This device
+tailnet-disconnected = Disconnected
+tailnet-connecting = Connecting…
+tailnet-disconnecting = Finishing the network operation…
+tailnet-needs-login = Sign in to Tailscale to continue.
+tailnet-needs-approval = Waiting for your network administrator to approve this device.
+tailnet-connected = Connected
+tailnet-failed = Connection failed
+tailnet-browser = Continue in browser
+tailnet-hostname = Device name
+tailnet-advanced = Advanced
+tailnet-control = Custom control server (optional, HTTPS)
+tailnet-plaintext = Allow private file for credentials
+tailnet-plaintext-note = Use a private local file only when the system credential store is unavailable. Keep this off to require the system store.
+tailnet-connect = Connect
+tailnet-disconnect = Disconnect
+tailnet-logout = Sign out
+tailnet-confirm-logout = Confirm sign out and remove saved identity
+tailnet-devices = Tailnet Devices
+tailnet-empty = No online devices. Check your network's device approval and access rules.
+tailnet-setup-required = Install Herdr and configure SSH access on this device, then try again.
+
+tailnet-more = Showing the first 64 of { $count } matches. Type a device name or address to narrow the list.
+
+tailnet-credentials-system-only = Windows uses Credential Manager; a private-file fallback is unavailable.
+
+
+tailnet-overview = Overview
+tailnet-settings-devices = Devices
+tailnet-search-devices = Search by name, address or system
+tailnet-online-only = Online only
+tailnet-peer-online = Online
+tailnet-peer-offline = Offline
+tailnet-peer-expired = Expired
+tailnet-no-matching-devices = No devices match this search.
+tailnet-device-count = { $shown } of { $total } devices

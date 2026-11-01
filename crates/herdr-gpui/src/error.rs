@@ -323,6 +323,8 @@ pub enum Error {
     SystemLoad(#[from] crate::system_load::Error),
     #[error(transparent)]
     TabLayout(#[from] crate::config::tab_layout::Error),
+    #[error(transparent)]
+    Tailnet(#[from] crate::tailnet::Error),
     #[error("{0}")]
     Toml(#[from] toml::de::Error),
     #[error("{0}")]

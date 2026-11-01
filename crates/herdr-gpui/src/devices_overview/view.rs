@@ -186,7 +186,7 @@ impl HerdrWindow {
                             .flex()
                             .flex_col()
                             .gap_5()
-                            .child(self.overview_header(&look, &devices, page, cx))
+                            .child(self.overview_header(&look, page, cx))
                             .child(chart::activity(
                                 &look,
                                 &self.devices_overview.history,
@@ -209,10 +209,12 @@ impl HerdrWindow {
                                             .flex_wrap()
                                             .items_center()
                                             .gap_3()
-                                            .child(look.title(
-                                                fl!("devices-overview-devices"),
-                                                shown.len(),
-                                            ))
+                                            .when(!query.trim().is_empty(), |row| {
+                                                row.child(look.title(
+                                                    fl!("devices-overview-results"),
+                                                    shown.len(),
+                                                ))
+                                            })
                                             .child(div().flex_1())
                                             .child(look.legend()),
                                     )
@@ -232,15 +234,8 @@ impl HerdrWindow {
             .into_any_element()
     }
 
-    fn overview_header(
-        &self,
-        look: &Look,
-        devices: &[Device],
-        page: &super::Page,
-        cx: &mut Context<Self>,
-    ) -> Div {
+    fn overview_header(&self, look: &Look, page: &super::Page, cx: &mut Context<Self>) -> Div {
         let theme = look.theme;
-        let agents = Tally::sum(devices).total();
         let unavailable = self.device_setup_unavailable();
         div()
             .flex()
@@ -259,12 +254,7 @@ impl HerdrWindow {
                             .text_size(px(look.ui.size + 7.))
                             .font_weight(FontWeight::SEMIBOLD)
                             .child(fl!("devices-overview-title")),
-                    )
-                    .child(div().text_color(rgb(theme.subtext())).child(fl!(
-                        "devices-overview-summary",
-                        devices = devices.len(),
-                        agents = agents
-                    ))),
+                    ),
             )
             // The field gives way before the button wraps under the title.
             .child(
@@ -330,20 +320,20 @@ fn totals(look: &Look, devices: &[Device]) -> Div {
         (
             fl!("devices-overview-blocked"),
             tally.blocked.to_string(),
-            fl!("devices-overview-waiting"),
+            String::new(),
             Some(AgentStatus::Blocked),
         ),
         (
             fl!("devices-overview-idle-or-done"),
             (tally.idle + tally.done).to_string(),
-            fl!("devices-overview-ready"),
+            String::new(),
             Some(AgentStatus::Idle),
         ),
         (
             fl!("devices-overview-online"),
             format!("{online}/{}", devices.len()),
             if unreachable == 0 {
-                fl!("devices-overview-all-reachable")
+                String::new()
             } else {
                 fl!("devices-overview-not-connected", count = unreachable)
             },
@@ -390,13 +380,15 @@ fn totals(look: &Look, devices: &[Device]) -> Div {
                                         .child(value),
                                 ),
                         )
-                        .child(
-                            div()
-                                .truncate()
-                                .text_size(look.small())
-                                .text_color(rgb(theme.muted))
-                                .child(detail),
-                        )
+                        .when(!detail.is_empty(), |cell| {
+                            cell.child(
+                                div()
+                                    .truncate()
+                                    .text_size(look.small())
+                                    .text_color(rgb(theme.muted))
+                                    .child(detail),
+                            )
+                        })
                 }),
         )
 }

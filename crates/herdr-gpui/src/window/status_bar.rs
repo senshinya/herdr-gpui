@@ -13,6 +13,9 @@ use crate::{
 use gpui::{prelude::*, *};
 use std::time::Duration;
 
+mod tailnet;
+pub(crate) use tailnet::Tailnet;
+
 /// The status bar's 24-unit SVG icons pad their artwork, so they are drawn at
 /// this size to look as large as the 12px ring of the report-issue button.
 const STATUS_GLYPH: f32 = 16.;
@@ -32,7 +35,24 @@ impl HerdrWindow {
             || self.local_error.is_some()
             || self.live.error.is_some())
         .then(|| self.live.status_text(self.local_error.as_deref()));
-        let items = self.config.status_bar;
+        let mut items = self.config.status_bar;
+        let available = self.status_bar_width();
+        let tailnet = self
+            .tailnet_status
+            .shown(self.config.tailscale.enabled, available);
+        let network_priority = tailnet && available < 420.;
+        let compact = self.viewport_width > 0. && self.viewport_width < 1200.;
+        if compact {
+            for button in [
+                &mut items.theme,
+                &mut items.shortcuts,
+                &mut items.report_issue,
+            ] {
+                if button.shown() {
+                    *button = Button::Icon;
+                }
+            }
+        }
         let height = px(self.status_bar_height());
         let usage = self.render_usage(cx);
         let has_usage = usage.is_some();
@@ -57,7 +77,8 @@ impl HerdrWindow {
             .px_3()
             .bg(self.fill().panel(self.theme.surface))
             .text_color(rgb(self.theme.foreground))
-            .children(self.render_agent_model(cx))
+            .children(self.render_agent_model(cx).filter(|_| !network_priority))
+            .when(tailnet, |bar| bar.child(self.render_tailnet_status(cx)))
             .children(usage)
             .when_some(
                 self.prefix_armed
@@ -115,11 +136,13 @@ impl HerdrWindow {
             )
             .children(self.render_mod_status_items(cx))
             .children(self.render_listening_ports(cx))
-            .children(self.render_system_load())
-            .children(self.render_gpu_load())
-            .children(self.render_network_quality(cx))
+            .when(!compact, |bar| {
+                bar.children(self.render_system_load())
+                    .children(self.render_gpu_load())
+                    .children(self.render_network_quality(cx))
+            })
             .children(self.caffeine_button(items.keep_awake, cx))
-            .when(items.theme.shown(), |bar| {
+            .when(items.theme.shown() && !network_priority, |bar| {
                 bar.child(
                     self.status_button(
                         "status-theme",
@@ -132,7 +155,7 @@ impl HerdrWindow {
                     })),
                 )
             })
-            .when(items.shortcuts.shown(), |bar| {
+            .when(items.shortcuts.shown() && !network_priority, |bar| {
                 bar.child(
                     self.status_button(
                         "status-keybinds",
@@ -145,7 +168,7 @@ impl HerdrWindow {
                     })),
                 )
             })
-            .when(items.report_issue.shown(), |bar| {
+            .when(items.report_issue.shown() && !network_priority, |bar| {
                 bar.child(
                     self.status_button(
                         "report-issue",
@@ -156,40 +179,51 @@ impl HerdrWindow {
                     .on_click(cx.listener(|this, _, _, cx| this.open_report_issue(cx))),
                 )
             })
-            .child(
-                div()
-                    .id("status-version")
-                    .debug_selector(|| "status-version".into())
-                    .map(|control| {
-                        self.chrome_stop(crate::window::chrome_focus::Region::StatusBar, control)
-                    })
-                    .role(Role::Button)
-                    .aria_label(if self.updater.update_available() {
-                        fl!("status-bar-update-available")
-                    } else {
-                        fl!("status-bar-version", version = APP_VERSION)
-                    })
-                    .flex_none()
-                    .whitespace_nowrap()
-                    .cursor_pointer()
-                    .hover(|s| s.bg(rgb(self.theme.active)))
-                    // A waiting update is the one status here worth
-                    // interrupting for, so it takes the accent color
-                    // the rest of the chrome reserves for chosen rows.
-                    .text_color(rgb(if self.updater.update_available() {
-                        self.theme.primary()
-                    } else {
-                        self.theme.muted
-                    }))
-                    .child(if self.updater.update_available() {
-                        fl!("status-bar-update-available")
-                    } else {
-                        APP_VERSION.to_owned()
-                    })
-                    .on_click(cx.listener(|this, _, window, cx| {
-                        this.open_app_update(false, window, cx);
-                    })),
+            .children(
+                (!network_priority || available >= 320. || self.updater.update_available()).then(
+                    || {
+                        div()
+                            .id("status-version")
+                            .debug_selector(|| "status-version".into())
+                            .map(|control| {
+                                self.chrome_stop(
+                                    crate::window::chrome_focus::Region::StatusBar,
+                                    control,
+                                )
+                            })
+                            .role(Role::Button)
+                            .aria_label(if self.updater.update_available() {
+                                fl!("status-bar-update-available")
+                            } else {
+                                fl!("status-bar-version", version = APP_VERSION)
+                            })
+                            .flex_none()
+                            .whitespace_nowrap()
+                            .cursor_pointer()
+                            .hover(|s| s.bg(rgb(self.theme.active)))
+                            // A waiting update is the one status here worth
+                            // interrupting for, so it takes the accent color
+                            // the rest of the chrome reserves for chosen rows.
+                            .text_color(rgb(if self.updater.update_available() {
+                                self.theme.primary()
+                            } else {
+                                self.theme.muted
+                            }))
+                            .child(if self.updater.update_available() {
+                                fl!("status-bar-update-available")
+                            } else {
+                                APP_VERSION.to_owned()
+                            })
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                this.open_app_update(false, window, cx);
+                            }))
+                    },
+                ),
             )
+    }
+
+    fn status_bar_width(&self) -> f32 {
+        (self.viewport_width - self.sidebar_column_width(self.viewport_width).unwrap_or(0.)).max(0.)
     }
 
     /// The focused agent's model, from the `model` and `effort` tokens its
@@ -448,6 +482,8 @@ impl HerdrWindow {
                 self.chrome_stop(crate::window::chrome_focus::Region::StatusBar, control)
             })
             .row()
+            .min_w(px(33.))
+            .justify_center()
             .items_center()
             .gap(px(5.))
             .px_2()

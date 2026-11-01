@@ -21,6 +21,7 @@ pub(super) enum Section {
     #[cfg(feature = "cloud")]
     CloudDevices,
     RemoteControl,
+    Tailscale,
     Configuration,
 }
 
@@ -84,6 +85,7 @@ impl Section {
         #[cfg(feature = "cloud")]
         Self::CloudDevices,
         Self::RemoteControl,
+        Self::Tailscale,
         Self::Configuration,
     ];
 
@@ -109,6 +111,7 @@ impl Section {
             Self::CloudDevices => "settings-section-cloud-devices",
             Self::RemoteControl => "settings-section-remote-control",
             Self::Configuration => "settings-section-configuration",
+            Self::Tailscale => "settings-section-tailscale",
         }
     }
 
@@ -126,6 +129,7 @@ impl Section {
             Self::CloudDevices => "settings-lead-cloud-devices",
             Self::RemoteControl => "settings-lead-remote-control",
             Self::Configuration => "settings-lead-configuration",
+            Self::Tailscale => "settings-lead-tailscale",
             Self::General | Self::Tabs | Self::Notifications => return None,
         };
         Some(i18n::message(id, &[]))
@@ -143,7 +147,7 @@ impl Section {
             Self::Integrations | Self::Plugins => Some(Group::Connect),
             #[cfg(feature = "cloud")]
             Self::CloudDevices => Some(Group::Connect),
-            Self::RemoteControl => Some(Group::Connect),
+            Self::RemoteControl | Self::Tailscale => Some(Group::Connect),
             Self::Configuration => Some(Group::Advanced),
         }
     }
@@ -165,6 +169,7 @@ impl Section {
             Self::CloudDevices => "icons/globe.svg",
             Self::RemoteControl => "icons/phone.svg",
             Self::Configuration => "icons/file.svg",
+            Self::Tailscale => "icons/network/tailscale.svg",
         }
     }
 

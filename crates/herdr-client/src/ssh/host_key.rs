@@ -79,7 +79,7 @@ pub fn scan_host_key(target: &str) -> Result<HostKeyScan> {
         .tempdir()?;
     let recorded = scratch.path().join("known_hosts");
     std::fs::File::create(&recorded)?;
-    let mut command = crate::environment::command("ssh");
+    let mut command = crate::tailnet::command(target);
     command
         .args(scan_options(&recorded, files))
         .args(super::POLICY)
@@ -227,7 +227,7 @@ fn lists_host<'a>(name: &str, files: impl IntoIterator<Item = &'a PathBuf>) -> R
 }
 
 fn known_hosts(target: &str) -> Result<KnownHosts> {
-    let mut command = crate::environment::command("ssh");
+    let mut command = crate::tailnet::command(target);
     command.args(["-G", "--", target]);
     let (status, output) = super::run(&mut command, Duration::from_secs(5), || false)?;
     if !status.success() {

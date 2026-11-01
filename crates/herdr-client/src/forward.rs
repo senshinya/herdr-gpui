@@ -314,7 +314,7 @@ fn system_port() -> Result<u16> {
 /// `RemoteForward` from the user's config that is busy elsewhere cannot end it.
 #[cfg(unix)]
 fn master_command(target: &str, socket: &Path) -> Command {
-    let mut command = crate::environment::command("ssh");
+    let mut command = crate::tailnet::command(target);
     // The user's host key choice comes first, so it wins over the default.
     command
         .args(ssh::HostKeys::of(target).options())
@@ -356,7 +356,7 @@ fn master_command(target: &str, socket: &Path) -> Command {
 /// once that master holds the port.
 #[cfg(unix)]
 fn forward_command(target: &str, socket: &Path, local_port: u16, remote_port: u16) -> Command {
-    let mut command = crate::environment::command("ssh");
+    let mut command = crate::tailnet::command(target);
     command
         .args(["-o", "BatchMode=yes", "-o"])
         .arg(control_path(socket))

@@ -161,12 +161,26 @@ jobs:
           export OPENSSL
           "$OPENSSL" version | grep -q '^OpenSSL 3\.'
           python3 -m unittest discover -s scripts -p 'test_*manifest.py' -v
+      - uses: actions/setup-go@90ad2b35f69faf97585ad74d28fa006d2739b7af # v7
+        with:
+          go-version: '1.26.7'
+          cache: false
+      - name: Install Windows C compiler for embedded Tailscale
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python scripts/setup-tailscale-cgo.py "$RUNNER_TEMP/tailscale-cgo" >> "$GITHUB_PATH"
       - name: Install pinned Rust toolchain
         run: rustup show
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           key: checks-${{ matrix.features }}
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Check embedded Tailscale
+        if: matrix.features == 'default'
+        shell: bash
+        run: |
+          test -z "$(gofmt -l native/tailscale/*.go)"
+          go -C native/tailscale test -mod=readonly -race ./...
       - name: Check formatting
         if: matrix.features == 'default'
         run: cargo fmt --all -- --check
@@ -228,12 +242,27 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/setup-go@90ad2b35f69faf97585ad74d28fa006d2739b7af # v7
+        with:
+          go-version: '1.26.7'
+          cache: false
+      - name: Install Windows C compiler for embedded Tailscale
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python scripts/setup-tailscale-cgo.py "$RUNNER_TEMP/tailscale-cgo" >> "$GITHUB_PATH"
       - name: Install pinned Rust toolchain
         run: rustup show
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           key: ${{ matrix.runner }}-${{ matrix.features }}
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Check embedded Tailscale on Windows
+        if: matrix.features == 'default'
+        shell: bash
+        run: |
+          test -z "$(gofmt -l native/tailscale/*.go)"
+          if [[ "$RUNNER_ARCH" == ARM64 ]]; then cgo_arch=aarch64; else cgo_arch=x86_64; fi
+          CC="$cgo_arch-w64-mingw32-clang" go -C native/tailscale test -mod=readonly ./...
       - name: Check formatting
         if: matrix.features == 'default'
         run: cargo fmt --all -- --check
@@ -280,6 +309,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/setup-go@90ad2b35f69faf97585ad74d28fa006d2739b7af # v7
+        with:
+          go-version: '1.26.7'
+          cache: false
+      - name: Install Windows C compiler for embedded Tailscale
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python scripts/setup-tailscale-cgo.py "$RUNNER_TEMP/tailscale-cgo" >> "$GITHUB_PATH"
       - name: Install pinned Rust toolchain
         run: rustup show
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
@@ -349,6 +386,14 @@ jobs:
       # where the shortcut test skips; run it here, before the slow build.
       - name: Test the install script's Start menu shortcut
         run: python scripts/release/tests/test_install_ps1.py -v
+      - uses: actions/setup-go@90ad2b35f69faf97585ad74d28fa006d2739b7af # v7
+        with:
+          go-version: '1.26.7'
+          cache: false
+      - name: Install Windows C compiler for embedded Tailscale
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python scripts/setup-tailscale-cgo.py "$RUNNER_TEMP/tailscale-cgo" >> "$GITHUB_PATH"
       - name: Install pinned Rust toolchain
         run: rustup show
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
@@ -452,6 +497,14 @@ jobs:
           persist-credentials: false
       - name: Install Linux build dependencies
         run: bash scripts/install-linux-deps.sh
+      - uses: actions/setup-go@90ad2b35f69faf97585ad74d28fa006d2739b7af # v7
+        with:
+          go-version: '1.26.7'
+          cache: false
+      - name: Install Windows C compiler for embedded Tailscale
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python scripts/setup-tailscale-cgo.py "$RUNNER_TEMP/tailscale-cgo" >> "$GITHUB_PATH"
       - name: Install pinned Rust toolchain
         env:
           TARGET: ${{ matrix.target }}
@@ -499,6 +552,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - uses: actions/setup-go@90ad2b35f69faf97585ad74d28fa006d2739b7af # v7
+        with:
+          go-version: '1.26.7'
+          cache: false
+      - name: Install Windows C compiler for embedded Tailscale
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python scripts/setup-tailscale-cgo.py "$RUNNER_TEMP/tailscale-cgo" >> "$GITHUB_PATH"
       - name: Install pinned Rust toolchain
         env:
           TARGET: ${{ matrix.target }}

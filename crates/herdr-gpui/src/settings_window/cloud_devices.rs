@@ -83,6 +83,20 @@ pub(super) fn first_tab() -> CloudProvider {
     CloudProvider::ALL[0]
 }
 
+/// Restyle persistent fields without replacing their draft, selection, or IME state.
+fn refresh_inputs<'a>(
+    inputs: impl IntoIterator<Item = &'a Entity<SearchInput>>,
+    config: &Config,
+    theme: &crate::config::Theme,
+    cx: &mut App,
+) {
+    for input in inputs {
+        input.update(cx, |input, cx| {
+            input.set_appearance(config.ui.clone(), theme.clone(), cx);
+        });
+    }
+}
+
 /// A card's text input, styled like the rest of Settings.
 fn input(
     placeholder: impl Fn() -> String + 'static,
@@ -179,6 +193,29 @@ fn cloud_devices(window: &crate::HerdrWindow) -> u64 {
 }
 
 impl SettingsWindow {
+    pub(super) fn refresh_cloud_appearance(&self, cx: &mut Context<Self>) {
+        for &provider in CloudProvider::ALL {
+            match provider {
+                #[cfg(feature = "azure")]
+                CloudProvider::Azure => self.refresh_azure_appearance(cx),
+                #[cfg(feature = "boat")]
+                CloudProvider::Boat => self.refresh_boat_appearance(cx),
+                #[cfg(feature = "coder")]
+                CloudProvider::Coder => self.refresh_coder_appearance(cx),
+                #[cfg(feature = "container")]
+                CloudProvider::Container => self.refresh_container_appearance(cx),
+                #[cfg(feature = "daytona")]
+                CloudProvider::Daytona => self.refresh_daytona_appearance(cx),
+                #[cfg(feature = "opensandbox")]
+                CloudProvider::OpenSandbox => self.refresh_opensandbox_appearance(cx),
+                #[cfg(feature = "railway")]
+                CloudProvider::Railway => self.refresh_railway_appearance(cx),
+                #[cfg(feature = "sprites")]
+                CloudProvider::Sprites => self.refresh_sprites_appearance(cx),
+            }
+        }
+    }
+
     /// Build each provider's card on first view, then refresh what it reads.
     pub(super) fn open_cloud_devices(&mut self, cx: &mut Context<Self>) {
         for &provider in CloudProvider::ALL {
@@ -349,12 +386,40 @@ impl SettingsWindow {
             .child(super::ui::section(&self.theme, &title, None))
     }
 
+    #[cfg(any(
+        feature = "azure",
+        feature = "boat",
+        feature = "coder",
+        feature = "daytona",
+        feature = "opensandbox",
+        feature = "railway",
+        feature = "sprites"
+    ))]
+    fn cloud_card_about(&self, title: String, id: &'static str, help: String) -> Div {
+        let (foreground, surface) = (self.theme.foreground, self.theme.surface);
+        div().flex().flex_col().gap(px(10.)).min_w_0().child(
+            super::ui::section(&self.theme, &title, None)
+                .id(id)
+                .role(Role::Heading)
+                .aria_label(title)
+                .aria_description(help.clone())
+                .tooltip(move |_, cx| {
+                    cx.new(|_| crate::usage::Hint {
+                        text: help.clone().into(),
+                        foreground,
+                        surface,
+                    })
+                    .into()
+                }),
+        )
+    }
+
     /// A label over its input; the input draws its own field.
     fn cloud_field(&self, label: impl Into<SharedString>, input: AnyView) -> Div {
         div()
             .flex()
             .flex_col()
-            .gap(px(6.))
+            .gap(px(4.))
             .min_w_0()
             .child(div().text_color(rgb(self.theme.muted)).child(label.into()))
             .child(input)

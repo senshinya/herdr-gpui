@@ -25,20 +25,20 @@ pub(super) fn title(limit: &Kind) -> String {
     fl!("usage-kind", kind = kind, name = name)
 }
 
-/// `Weekly 89% left`.
-pub(super) fn left_heading(limit: &Limit) -> String {
+/// `Weekly 11% used`.
+pub(super) fn used_heading(limit: &Limit) -> String {
     let (kind, name) = kind(&limit.kind);
     fl!(
-        "usage-limit-left",
+        "usage-limit-used",
         kind = kind,
         name = name,
-        left = limit.left()
+        used = limit.percent()
     )
 }
 
-/// `89% left`.
-pub(super) fn left(limit: &Limit) -> String {
-    fl!("usage-left", left = limit.left())
+/// `11% used`.
+pub(super) fn used(limit: &Limit) -> String {
+    fl!("usage-used", used = limit.percent())
 }
 
 /// `47m`, `2h 53m`, `4d 11h`: the coarsest two units that still say when,
@@ -69,7 +69,7 @@ pub(super) fn updated(elapsed: Duration) -> String {
     }
 }
 
-/// `11% in reserve · Lasts until reset`, as CodexBar puts it.
+/// `11 points below expected usage · Lasts until reset`.
 pub(super) fn pace(pace: &Pace, used: f32) -> String {
     if used >= 100. {
         // The header already shows when the window resets.

@@ -5,6 +5,7 @@ use super::{
 };
 use gpui::{Entity, TestAppContext, VisualTestContext, px, size};
 
+mod appearance;
 mod destroy;
 mod messages;
 

@@ -111,6 +111,17 @@ impl SpritesCard {
 }
 
 impl SettingsWindow {
+    pub(super) fn refresh_sprites_appearance(&self, cx: &mut Context<Self>) {
+        if let Some(card) = &self.sprites_card {
+            super::refresh_inputs(
+                card.api_url.iter().chain([&card.token]),
+                &self.config,
+                &self.theme,
+                cx,
+            );
+        }
+    }
+
     pub(super) fn open_sprites_card(&mut self, cx: &mut Context<Self>) {
         if self.sprites_card.is_none() {
             self.sprites_card = Some(SpritesCard::new(&self.config, &self.theme, cx));
@@ -309,12 +320,15 @@ impl SettingsWindow {
             Token::Missing => fl!("settings-cloud-sprites-token-missing"),
         };
         let account = self
-            .cloud_card(fl!(
-                "settings-cloud-experimental",
-                provider = crate::cloud::name(CloudProvider::Sprites)
-            ))
+            .cloud_card_about(
+                fl!(
+                    "settings-cloud-experimental",
+                    provider = crate::cloud::name(CloudProvider::Sprites)
+                ),
+                "cloud-sprites-about",
+                fl!("settings-cloud-sprites-note"),
+            )
             .debug_selector(|| "cloud-sprites-card".into())
-            .child(self.control_note(fl!("settings-cloud-sprites-note")))
             .child(div().min_w_0().child(status))
             .child(self.cloud_field(
                 fl!("settings-cloud-sprites-api-url"),
@@ -360,7 +374,6 @@ impl SettingsWindow {
         let mut new = self
             .cloud_card(fl!("settings-cloud-sprites-new"))
             .debug_selector(|| "cloud-sprites-new".into())
-            .child(self.control_note(fl!("settings-cloud-sprites-new-note")))
             .child(
                 self.control_switch(
                     "cloud-sprites-install",

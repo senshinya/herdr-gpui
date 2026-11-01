@@ -423,7 +423,9 @@ const CHECK_TIMEOUT: Duration = Duration::from_secs(5);
 /// have been authenticated interactively where this master cannot be.
 fn launch(program: &OsString, target: &str, lane: Lane, id: u64) -> Result<Master, StartError> {
     let mut check = crate::environment::command(&program.to_string_lossy());
-    check.args(["-O", "check", "--", target]);
+    check
+        .args(crate::tailnet::options(target))
+        .args(["-O", "check", "--", target]);
     let checked = crate::ssh::run(&mut check, CHECK_TIMEOUT, || false);
     if matches!(checked, Ok((status, _)) if status.success()) {
         return Err(StartError::UserMaster);
@@ -435,6 +437,7 @@ fn launch(program: &OsString, target: &str, lane: Lane, id: u64) -> Result<Maste
         .args(["-c", WATCHDOG, "herdr-ssh-mux"])
         .arg(dir.path())
         .arg(program)
+        .args(crate::tailnet::options(target))
         .args(master_args(target, lane, &socket))
         .stdin(Stdio::piped())
         // Stderr can carry banners or secrets; nothing reads it.
@@ -519,7 +522,7 @@ pub(super) fn master_args(target: &str, lane: Lane, socket: &Path) -> Vec<String
 /// keeps it a client; OpenSSH keeps the first value it reads. Should the
 /// master be gone by the time it runs, SSH connects directly instead.
 pub(super) fn channel_command(target: &str, remote_command: &str, socket: &Path) -> Command {
-    let mut command = crate::environment::command("ssh");
+    let mut command = crate::tailnet::command(target);
     // Should the master be gone, the direct connection keeps its host's choice.
     command
         .args(crate::ssh::HostKeys::of(target).options())

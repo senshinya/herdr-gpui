@@ -1,5 +1,5 @@
 use super::*;
-use crate::orchestrator::{Error, PullRequest, view::list::Empty};
+use crate::orchestrator::{PullRequest, view::list::Empty};
 use std::sync::Arc;
 
 #[gpui::test]
@@ -20,7 +20,14 @@ fn pr_toggles_explain_why_loaded_pull_requests_are_hidden(cx: &mut gpui::TestApp
             });
             let key = pr.key.canonical();
             let repo = &mut view.repos[0];
-            repo.snapshot.error = Some(Arc::new(Error::NoDataDirectory));
+            repo.snapshot.error = None;
+            repo.snapshot.repo = Some(
+                crate::orchestrator::repo::parse(
+                    &repo.request.target,
+                    "common\t/app/.git\nmain\t/app\nbeads\t0\n",
+                )
+                .unwrap(),
+            );
             repo.snapshot.items = Arc::new(vec![pr]);
             repo.login = Some("another-author".into());
             view.tab = Tab::PullRequests;

@@ -1,8 +1,7 @@
 // i18n: migrated
 //! The sidebar host header's context menu. Saved SSH devices and cloud devices
-//! have this one, each with the actions its kind supports; a WSL
-//! distribution's only offers its removal (see `wsl`). Local is always
-//! present, and an explicit socket is not in the catalog.
+//! have this one, each with the actions its kind supports. Every device can
+//! create a workspace; only saved devices offer catalog edits or removal.
 use super::setup;
 use crate::i18n::fl;
 use crate::{
@@ -15,45 +14,11 @@ use crate::{
 use gpui::{prelude::*, *};
 use herdr_client::ConnectTarget;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Action {
-    Rename,
-    /// Toggles `[devices.<id>] keybindings` between local and server.
-    ServerKeybindings,
-    /// Forwards one of the host's listening ports to this computer.
-    #[cfg(unix)]
-    ForwardPort,
-    /// Picks `[devices.<id>] theme`, the terminal's colors on this device.
-    Theme,
-    /// Opens Settings > Cloud devices on the device's provider.
-    #[cfg(feature = "cloud")]
-    ProviderSettings,
-    /// Runs the configured setup script on the cloud device again.
-    #[cfg(feature = "cloud")]
-    RunSetup,
-    Remove,
-}
-
-/// Each row's action and the message naming it.
-const SSH_ACTIONS: &[(Action, &str)] = &[
-    (Action::Rename, "host-menu-rename"),
-    (Action::ServerKeybindings, "host-menu-server-keybindings"),
-    // Port forwards need an `ssh` control master, which Windows OpenSSH lacks.
-    #[cfg(unix)]
-    (Action::ForwardPort, "host-menu-forward-port"),
-    (Action::Theme, "host-menu-theme"),
-    (Action::Remove, "host-menu-remove"),
-];
-
-/// Port forwards, server keybindings, and the terminal theme go through the
-/// SSH profile, which a cloud device does not have.
+mod actions;
+mod new_workspace;
 #[cfg(feature = "cloud")]
-const CLOUD_ACTIONS: &[(Action, &str)] = &[
-    (Action::Rename, "host-menu-rename"),
-    (Action::ProviderSettings, "host-menu-cloud-settings"),
-    (Action::RunSetup, "host-menu-run-setup"),
-    (Action::Remove, "host-menu-remove"),
-];
+use actions::CLOUD_ACTIONS;
+use actions::{Action, LOCAL_ACTIONS, SSH_ACTIONS, WSL_ACTIONS};
 
 /// The saved entry the menu acts on.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -71,7 +36,7 @@ enum Saved {
 pub(crate) struct HostMenu {
     /// The endpoint, as the window and its account slots key it.
     id: String,
-    saved: Saved,
+    saved: Option<Saved>,
     label: String,
     /// What the device is reached by: the SSH target, or the cloud machine's
     /// name. An empty new name falls back to it.
@@ -102,9 +67,11 @@ pub(crate) struct HostMenu {
 impl HostMenu {
     fn actions(&self) -> &'static [(Action, &'static str)] {
         match self.saved {
-            Saved::Ssh { .. } => SSH_ACTIONS,
+            Some(Saved::Ssh { .. }) => SSH_ACTIONS,
+            None if self.id.starts_with(crate::endpoint::WSL_PREFIX) => WSL_ACTIONS,
+            None => LOCAL_ACTIONS,
             #[cfg(feature = "cloud")]
-            Saved::Cloud { .. } => CLOUD_ACTIONS,
+            Some(Saved::Cloud { .. }) => CLOUD_ACTIONS,
         }
     }
 
@@ -112,15 +79,16 @@ impl HostMenu {
     /// cloud device has none.
     fn profile(&self) -> Option<&str> {
         match &self.saved {
-            Saved::Ssh { profile } => Some(profile),
+            Some(Saved::Ssh { profile }) => Some(profile),
             #[cfg(feature = "cloud")]
-            Saved::Cloud { .. } => None,
+            Some(Saved::Cloud { .. }) => None,
+            None => None,
         }
     }
 
     /// The SSH target port forwards are keyed by; a cloud device has none.
     fn ssh_target(&self) -> Option<&str> {
-        matches!(self.saved, Saved::Ssh { .. }).then_some(self.target.as_str())
+        matches!(self.saved, Some(Saved::Ssh { .. })).then_some(self.target.as_str())
     }
 }
 
@@ -133,10 +101,8 @@ impl HerdrWindow {
         cx: &mut Context<Self>,
     ) {
         tracing::info!(category = "device_remove", id, "Opening host menu");
-        if id.starts_with(crate::endpoint::WSL_PREFIX) {
-            if self.device_setup_unavailable().is_none() {
-                self.open_remove_wsl(id, anchor, window, cx);
-            }
+        if id.starts_with(crate::endpoint::WSL_PREFIX) && self.device_setup_unavailable().is_some()
+        {
             return;
         }
         // A device already being removed has nothing left to offer.
@@ -158,7 +124,7 @@ impl HerdrWindow {
         };
         // The saved entry, not the live target: removal claims and names the
         // profile, whichever session the list has attached the device to.
-        let (saved, target, session) = match endpoint.saved_target() {
+        let (saved, target, session): (Option<Saved>, &str, &str) = match endpoint.saved_target() {
             ConnectTarget::Ssh { target, session } => {
                 // The CLI edits the default catalog, the one device setup also uses.
                 if let Some(reason) = self.device_setup_unavailable() {
@@ -179,9 +145,9 @@ impl HerdrWindow {
                     return;
                 };
                 (
-                    Saved::Ssh {
+                    Some(Saved::Ssh {
                         profile: profile.to_owned(),
-                    },
+                    }),
                     target,
                     session,
                 )
@@ -194,21 +160,16 @@ impl HerdrWindow {
                 session,
                 ..
             } => (
-                Saved::Cloud {
+                Some(Saved::Cloud {
                     provider: *provider,
                     id: machine_id.clone(),
-                },
+                }),
                 machine,
                 session,
             ),
-            _ => {
-                tracing::info!(
-                    category = "device_remove",
-                    id,
-                    "Host menu refused: the device is not a saved SSH or cloud device"
-                );
-                return;
-            }
+            ConnectTarget::Wsl { distro, session } => (None, distro, session),
+            ConnectTarget::Local | ConnectTarget::Socket(_) => (None, &endpoint.label, ""),
+            ConnectTarget::Session { name, .. } => (None, &endpoint.label, name),
         };
         let menu = HostMenu {
             id: endpoint.id.clone(),
@@ -256,6 +217,13 @@ impl HerdrWindow {
             "Host menu action"
         );
         match action {
+            Action::NewWorkspace => {
+                let Some(id) = self.menu.host.as_ref().map(|host| host.id.clone()) else {
+                    return;
+                };
+                self.new_workspace_on_device(&id, window, cx);
+                return;
+            }
             Action::Rename => {
                 let Some(host) = &self.menu.host else {
                     return;
@@ -280,7 +248,7 @@ impl HerdrWindow {
             #[cfg(feature = "cloud")]
             Action::ProviderSettings => {
                 if let Some(HostMenu {
-                    saved: Saved::Cloud { provider, .. },
+                    saved: Some(Saved::Cloud { provider, .. }),
                     ..
                 }) = self.menu.host
                 {
@@ -314,6 +282,13 @@ impl HerdrWindow {
                 self.menu.page = Some(Page::ForwardPort);
             }
             Action::Remove => {
+                if let Some(host) = &self.menu.host
+                    && host.id.starts_with(crate::endpoint::WSL_PREFIX)
+                {
+                    let (id, anchor) = (host.id.clone(), self.menu.anchor);
+                    self.open_remove_wsl(&id, anchor, window, cx);
+                    return;
+                }
                 self.menu.page = Some(Page::RemoveDevice);
                 #[cfg(feature = "cloud")]
                 self.check_unsynced(cx);
@@ -327,7 +302,7 @@ impl HerdrWindow {
     fn toggle_server_keybindings(&mut self, cx: &mut Context<Self>) {
         let Some(HostMenu {
             id,
-            saved: Saved::Ssh { profile },
+            saved: Some(Saved::Ssh { profile }),
             ..
         }) = &self.menu.host
         else {
@@ -364,7 +339,10 @@ impl HerdrWindow {
                 return;
             }
         };
-        let (id, saved) = (host.id.clone(), host.saved.clone());
+        let Some(saved) = host.saved.clone() else {
+            return;
+        };
+        let id = host.id.clone();
         host.renaming = true;
         host.error = None;
         let background = cx
@@ -419,6 +397,9 @@ impl HerdrWindow {
             );
             return;
         };
+        if host.saved.is_none() {
+            return;
+        }
         let forget = host.forget_github && self.host_has_github(&host.id);
         #[cfg(feature = "cloud")]
         let deletion = host.deletion().filter(|_| host.destroy);
@@ -428,12 +409,15 @@ impl HerdrWindow {
         );
         let HostMenu {
             id,
-            saved,
+            saved: Some(saved),
             label,
             target,
             session,
             ..
-        } = host;
+        } = host
+        else {
+            return;
+        };
         tracing::info!(category = "device_remove", id, "Removing device");
         // The outer result is the removal itself; the inner one, the GitHub
         // credential that only matters once the device is gone.
@@ -636,7 +620,11 @@ impl HerdrWindow {
                             .text_color(rgb(theme.muted))
                             .truncate()
                             // The device's target and session.
-                            .child(format!("{} · {}", host.target, host.session)), // i18n: data
+                            .child(if host.session.is_empty() {
+                                host.target.clone()
+                            } else {
+                                format!("{} · {}", host.target, host.session) // i18n: data
+                            }),
                     ),
             );
             let server_keys = self.config.keybinding_source(&host.id) == KeybindingSource::Server;
@@ -929,20 +917,21 @@ fn removal_note(host: &HostMenu) -> String {
         return note;
     }
     match host.saved {
-        Saved::Ssh { .. } => fl!(
+        Some(Saved::Ssh { .. }) => fl!(
             "host-menu-remove-ssh-note",
             device = host.label.as_str(),
             target = host.target.as_str(),
             session = host.session.as_str(),
         ),
         #[cfg(feature = "cloud")]
-        Saved::Cloud { provider, .. } => fl!(
+        Some(Saved::Cloud { provider, .. }) => fl!(
             "host-menu-remove-cloud-note",
             device = host.label.as_str(),
             target = host.target.as_str(),
             provider = crate::cloud::name(provider),
             machine = crate::cloud::noun(provider),
         ),
+        None => String::new(),
     }
 }
 

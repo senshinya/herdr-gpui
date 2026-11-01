@@ -209,6 +209,9 @@ pub(crate) fn open_additional_window_then(
 pub(crate) fn run() -> std::process::ExitCode {
     use cli::{LaunchMode, LaunchOptions};
     let mut args: Vec<_> = std::env::args_os().skip(1).collect();
+    if let Some(exit) = crate::tailnet::run_helper(&args) {
+        return exit;
+    }
     #[cfg(target_os = "macos")]
     if let Some(exit) = crate::window::run_clipboard_helper(&args) {
         return exit;
@@ -364,6 +367,20 @@ pub(crate) fn run() -> std::process::ExitCode {
             light: None,
         }
     };
+    if mode == LaunchMode::Normal
+        && let Err(error) = crate::tailnet::initialize(
+            &appearance.dark.config,
+            matches!(
+                &target,
+                ConnectTarget::Session {
+                    development: true,
+                    ..
+                }
+            ),
+        )
+    {
+        tracing::warn!(%error, "Could not initialize embedded Tailscale");
+    }
     let failed = startup_failed.clone();
     let window_state = (mode == LaunchMode::Normal).then(crate::window_state::WindowState::load);
     // Fixtures never ask about, or touch, agent configuration.
@@ -473,6 +490,7 @@ pub(crate) fn run() -> std::process::ExitCode {
             // Only the user's own app answers agents; native test modes stay private.
             if mode == LaunchMode::Normal {
                 crate::control::install(cx);
+                crate::tailnet::install(cx);
                 crate::window::system_notifications::install(cx);
                 // Nor do they start VS Code.
                 crate::code_server::Launcher::install(cx);

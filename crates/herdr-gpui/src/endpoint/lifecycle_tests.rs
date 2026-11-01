@@ -21,6 +21,7 @@ mod background_commands;
 mod close_pane;
 mod close_sequence;
 mod dead_keys;
+mod device_workspace;
 mod endpoint_switch;
 mod file_paste;
 mod focus_fences;

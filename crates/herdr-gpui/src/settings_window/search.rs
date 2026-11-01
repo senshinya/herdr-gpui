@@ -49,6 +49,13 @@ impl SettingsWindow {
             catalog::Availability::FollowingSystemTheme => {
                 ThemeName::follows_system(self.drafted_theme())
             }
+            catalog::Availability::TailnetActive => {
+                crate::tailnet::snapshot().status.state
+                    != herdr_remote::tailscale::State::Disconnected
+            }
+            catalog::Availability::TailnetConnected => {
+                crate::tailnet::snapshot().status.state == herdr_remote::tailscale::State::Connected
+            }
             catalog::Availability::Windows => cfg!(windows),
         }
     }
@@ -112,6 +119,9 @@ impl SettingsWindow {
         cx.default_global::<RowBounds>().0.clear();
         self.select_section(entry.section, window, cx);
         let id = entry.id;
+        if matches!(id, "tailnet-plaintext" | "tailnet-control") {
+            self.reveal_tailnet_advanced();
+        }
         // The page paints in the next frame; its rows report their bounds then.
         cx.on_next_frame(window, move |_, window, cx| {
             cx.on_next_frame(window, move |this, _, cx| this.scroll_to_row(id, cx));

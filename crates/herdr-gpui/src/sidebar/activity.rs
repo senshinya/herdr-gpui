@@ -651,13 +651,7 @@ impl HerdrWindow {
             .border_e(px(1.))
             .border_color(rgb(theme.active))
             .when(expanded, |title| {
-                title.child(
-                    div()
-                        .flex_1()
-                        .min_w_0()
-                        .truncate()
-                        .child(label(panel).to_uppercase()),
-                )
+                title.child(div().flex_1().min_w_0().truncate().child(label(panel)))
             })
             .child(self.sidebar_toggle(cx))
     }

@@ -80,7 +80,7 @@ impl SettingsWindow {
         let view = cx.entity().downgrade();
         ui::row(&self.theme, row, i18n::message(title, &[]))
             .when(axis == Axis::X && side == Side::Start, |row| {
-                row.description(fl!("settings-theme-padding-left-hint"))
+                row.help(fl!("settings-theme-padding-left-hint"))
             })
             .control(ui::number(
                 &self.theme,

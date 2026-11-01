@@ -37,7 +37,20 @@ impl HerdrWindow {
                     label: fl!("window-notices-diagnostic-app"),
                     lines,
                     expanded: self.gui_config_diagnostic.expanded(),
-                    footer: None,
+                    footer: Some(
+                        self.chrome_stop(Region::Notices, div().id("gui-config-recovery"))
+                            .debug_selector(|| "gui-config-recovery".into())
+                            .role(Role::Button)
+                            .aria_label(crate::i18n::fl!("settings-open-configuration"))
+                            .cursor_pointer()
+                            .text_color(rgb(self.theme.primary()))
+                            .child(crate::i18n::fl!("settings-open-configuration"))
+                            .on_click(cx.listener(|_, _, _, cx| {
+                                cx.stop_propagation();
+                                crate::settings_window::open_configuration(cx.weak_entity(), cx);
+                            }))
+                            .into_any_element(),
+                    ),
                 },
                 move |this, cx| {
                     if this.gui_config_diagnostic.dismiss(&dismissed) {

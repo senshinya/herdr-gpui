@@ -6,6 +6,8 @@ use anyhow::{Context as _, Result, bail, ensure};
 use std::time::{Duration, Instant};
 
 mod fonts;
+#[cfg(feature = "mockup")]
+mod tailnet;
 mod themes;
 use fonts::verify_fonts;
 use themes::verify_themes;
@@ -99,6 +101,8 @@ pub(crate) async fn verify_native(
 ) -> Result<()> {
     #[cfg(feature = "mockup")]
     let capture = std::env::var_os("HERDR_TEST_SETTINGS_CAPTURE").map(std::path::PathBuf::from);
+    #[cfg(feature = "mockup")]
+    tailnet::capture_devices(source, cx).await?;
     let before = source.update(cx, |view, _, _| view.input_probe)?;
     AnyWindowHandle::from(source).update(cx, |_, window, cx| -> Result<()> {
         window.draw(cx).clear(cx);
@@ -136,6 +140,8 @@ pub(crate) async fn verify_native(
         );
         Ok(())
     })??;
+    #[cfg(feature = "mockup")]
+    tailnet::capture_settings_devices(settings, cx).await?;
     let source_actions = source.update(cx, |view, _, _| view.input_probe.actions)?;
 
     for expected in [size(px(680.), px(560.)), size(px(960.), px(780.))] {
@@ -205,7 +211,12 @@ pub(crate) async fn verify_native(
                 ensure!(
                     body.top() >= px(crate::titlebar::HEIGHT)
                         && body.bottom() <= expected.height - px(36.)
-                        && body.size.height > px(400.),
+                        && body.size.height
+                            > if section == Section::Tailscale {
+                                expected.height * 0.6
+                            } else {
+                                px(400.)
+                            },
                     "Settings body height: {body:?}"
                 );
                 // Categories may scroll out of a short window's list, but never
@@ -233,6 +244,37 @@ pub(crate) async fn verify_native(
                 ensure!(!view.saving, "navigation started a settings write");
                 Ok(())
             })??;
+            #[cfg(feature = "mockup")]
+            if section == Section::Tailscale {
+                let extension = if expected.width == px(960.) {
+                    "tailnet.png"
+                } else {
+                    "tailnet-narrow.png"
+                };
+                capture_settings(settings, extension, cx).await?;
+                if expected.width == px(960.)
+                    && std::env::var_os("HERDR_TEST_SETTINGS_CAPTURE").is_some()
+                {
+                    settings.update(cx, |view, _, cx| {
+                        view.reveal_tailnet_advanced();
+                        cx.notify();
+                    })?;
+                    capture_settings(settings, "tailnet-advanced.png", cx).await?;
+                }
+            }
+            #[cfg(feature = "mockup")]
+            if expected.width == px(960.) {
+                let extension = match section {
+                    Section::Indicators => Some("indicators.png"),
+                    Section::StatusBar => Some("status-settings.png"),
+                    #[cfg(feature = "cloud")]
+                    Section::CloudDevices => Some("cloud.png"),
+                    _ => None,
+                };
+                if let Some(extension) = extension {
+                    capture_settings(settings, extension, cx).await?;
+                }
+            }
             if section == Section::Fonts {
                 verify_fonts(settings, source, expected, cx).await?;
             }

@@ -30,18 +30,14 @@ pub(in crate::settings_window) enum Source {
 }
 
 pub(in crate::settings_window) fn tag(theme: &Theme, source: Source) -> Div {
-    let (label, color) = match source {
-        Source::Herdr => (fl!("settings-source-herdr"), theme.ink(0x8fb8d9)),
-        Source::HerdrUi => (fl!("settings-source-herdr-ui"), theme.ink(0xc9b26f)),
+    let label = match source {
+        Source::Herdr => fl!("settings-source-herdr"),
+        Source::HerdrUi => fl!("settings-source-herdr-ui"),
     };
     div()
-        .text_size(px(9.))
-        .line_height(px(13.))
-        .px(px(5.))
-        .rounded(px(corners::SMALL))
-        .border_1()
-        .border_color(rgb(theme.active))
-        .text_color(rgb(color))
+        .text_size(rems(11. / 12.))
+        .line_height(rems(16. / 12.))
+        .text_color(rgb(theme.subtext()))
         .font_weight(FontWeight::MEDIUM)
         .child(label)
 }
@@ -54,15 +50,15 @@ pub(in crate::settings_window) fn section(
     div()
         .row()
         .items_center()
-        .gap(px(6.))
-        .mt(px(22.))
-        .pb(px(6.))
+        .gap(px(8.))
+        .mt(px(24.))
+        .pb(px(8.))
         .border_b_1()
         .border_color(rgb(theme.active))
-        .text_size(px(11.))
-        .font_weight(FontWeight::SEMIBOLD)
+        .text_size(rems(11. / 12.))
+        .font_weight(FontWeight::MEDIUM)
         .text_color(rgb(theme.subtext()))
-        .child(title.to_uppercase())
+        .child(title.to_owned())
         .children(tag_source.map(|source| tag(theme, source)))
 }
 
@@ -71,6 +67,7 @@ pub(in crate::settings_window) struct Row {
     id: SharedString,
     title: SharedString,
     description: Option<SharedString>,
+    help: Option<SharedString>,
     tag: Option<Source>,
     disabled: Option<SharedString>,
     controls: Vec<AnyElement>,
@@ -86,6 +83,7 @@ pub(in crate::settings_window) fn row(
         id: id.into(),
         title: title.into(),
         description: None,
+        help: None,
         tag: None,
         disabled: None,
         controls: Vec::new(),
@@ -93,6 +91,10 @@ pub(in crate::settings_window) fn row(
 }
 
 impl Row {
+    pub(in crate::settings_window) fn help(mut self, text: impl Into<SharedString>) -> Self {
+        self.help = Some(text.into());
+        self
+    }
     pub(in crate::settings_window) fn description(mut self, text: impl Into<SharedString>) -> Self {
         self.description = Some(text.into());
         self
@@ -125,12 +127,38 @@ impl IntoElement for Row {
     fn into_element(self) -> Stateful<Div> {
         let id = self.id.clone();
         let title = self.title.clone();
-        let help = self.disabled.clone().or_else(|| self.description.clone());
+        let mut help = self
+            .disabled
+            .clone()
+            .or_else(|| self.description.clone())
+            .or_else(|| self.help.clone())
+            .map(|text| text.to_string())
+            .unwrap_or_default();
+        if let Some(source) = self.tag {
+            if !help.is_empty() {
+                help.push('\n');
+            }
+            help.push_str(&match source {
+                Source::Herdr => fl!("settings-source-herdr"),
+                Source::HerdrUi => fl!("settings-source-herdr-ui"),
+            });
+        }
+        let help = (!help.is_empty()).then(|| SharedString::from(help));
+        let (foreground, surface) = (self.theme.foreground, self.theme.surface);
         self.into_div()
             .id(ElementId::Name(format!("{id}-row").into()))
             .role(Role::Group)
             .aria_label(title)
-            .when_some(help, |row, help| row.aria_description(help))
+            .when_some(help, |row, help| {
+                row.aria_description(help.clone()).tooltip(move |_, cx| {
+                    cx.new(|_| crate::usage::Hint {
+                        text: help.clone(),
+                        foreground,
+                        surface,
+                    })
+                    .into()
+                })
+            })
     }
 }
 
@@ -142,7 +170,6 @@ impl Row {
         let id = self.id.clone();
         let title_id = format!("{id}-title");
         let desc_id = format!("{id}-description");
-        let tag_id = format!("{id}-tag");
         let dimmed = self.disabled.is_some();
         let tracked = id.clone();
         let reason_id = format!("{id}-reason");
@@ -176,18 +203,15 @@ impl Row {
                             .row()
                             .items_center()
                             .gap(px(6.))
-                            .text_size(px(12.))
+                            .text_size(rems(1.))
                             .font_weight(FontWeight::MEDIUM)
-                            .child(self.title)
-                            .children(self.tag.map(|source| {
-                                tag(theme, source).debug_selector(move || tag_id.clone())
-                            })),
+                            .child(self.title),
                     )
                     .children(description.map(|text| {
                         div()
                             .debug_selector(move || desc_id.clone())
-                            .text_size(px(11.))
-                            .line_height(px(15.))
+                            .text_size(rems(11. / 12.))
+                            .line_height(rems(15. / 12.))
                             .text_color(rgb(theme.subtext()))
                             .child(text)
                     })),
@@ -255,6 +279,20 @@ pub(in crate::settings_window) fn button(
         })
         .when(!enabled, |button| button.opacity(0.5))
         .child(label)
+}
+
+pub(in crate::settings_window) fn primary_button(
+    theme: &Theme,
+    id: impl Into<SharedString>,
+    label: impl Into<SharedString>,
+    enabled: bool,
+) -> Stateful<Div> {
+    button(theme, id, label, enabled).when(enabled, |button| {
+        button
+            .bg(rgb(theme.primary_wash()))
+            .border_color(rgb(theme.primary()))
+            .font_weight(FontWeight::SEMIBOLD)
+    })
 }
 
 pub(in crate::settings_window) fn segmented<T: Copy + PartialEq + 'static>(

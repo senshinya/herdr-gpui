@@ -56,7 +56,9 @@ fn the_footer_fits_more_than_two_and_follows_resize_in_both_directions(cx: &mut 
         view.usage = super::super::Usage::showing(super::super::Host::Local, readings());
         view
     });
-    cx.simulate_resize(size(px(1800.), px(600.)));
+    // The headless shaper gives Fluent's invisible bidi isolates a glyph's
+    // width. Leave room for that overhead as well as the network status.
+    cx.simulate_resize(size(px(2400.), px(600.)));
     cx.update(|window, cx| full_draw(window, cx).clear(cx));
     assert_eq!(visible(cx), SERVICES);
 
@@ -99,7 +101,7 @@ fn the_footer_fits_more_than_two_and_follows_resize_in_both_directions(cx: &mut 
     cx.update(|window, cx| full_draw(window, cx).clear(cx));
     assert!(visible(cx).len() > narrow.len());
 
-    cx.simulate_resize(size(px(1800.), px(600.)));
+    cx.simulate_resize(size(px(2400.), px(600.)));
     cx.update(|window, cx| full_draw(window, cx).clear(cx));
     assert_eq!(visible(cx), SERVICES);
     let position = cx.debug_bounds("usage-cursor").unwrap().center();

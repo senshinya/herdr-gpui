@@ -22,6 +22,5 @@ settings-cloud-opensandbox-memory = Memory
 
 ## New sandbox and OpenSandbox devices.
 
-settings-cloud-opensandbox-new-note = Creates a sandbox with a generated name and no expiry, keeps Herdr's server running there, and adds it as a device.
 settings-cloud-opensandbox-devices = OpenSandbox devices
 settings-cloud-opensandbox-devices-note = Remove forgets a sandbox and leaves it on the server. To delete one, use Remove device… in its sidebar menu, which first checks it for unpushed work.

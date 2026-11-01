@@ -154,6 +154,9 @@ pub(crate) struct MenuState {
     pub(crate) tab: Option<crate::tab_menu::TabMenu>,
     pub(crate) group: Option<crate::group_menu::GroupMenu>,
     pub(crate) host: Option<super::devices::HostMenu>,
+    /// Selection epoch and connection generation of a device's New Workspace
+    /// click, held only until its surface is active. Reset cancels the intent.
+    pub(in crate::menu) device_workspace: Option<(u64, u64)>,
     pub(crate) pane: Option<crate::pane_menu::PaneMenu>,
     /// The new worktree dialog's tabs and the GitHub listing behind them.
     pub(crate) worktree: Option<super::WorktreeSource>,
@@ -434,6 +437,7 @@ impl MenuState {
             tab: None,
             group: None,
             host: None,
+            device_workspace: None,
             pane: None,
             worktree: None,
             dispatch: None,
@@ -472,6 +476,7 @@ impl MenuState {
         self.tab = None;
         self.group = None;
         self.host = None;
+        self.device_workspace = None;
         self.pane = None;
         self.github_selected = None;
         self.github_scroll.set_offset(Point::default());

@@ -22,8 +22,9 @@ add-device-providers-lead = Set up a provider in Settings, and Add Device lists 
 # SSH alias; $user is the login SSH resolved for it.
 add-device-target-placeholder = user@hostname or SSH alias
 add-device-label-placeholder = The SSH target
-add-device-intro = Herdr checks the host over SSH and saves the device. If Herdr is missing or SSH needs your input, setup continues in a local workspace.
 add-device-target = SSH target
+add-device-username-help = SSH uses the User from your SSH config, or your local username. Discovered addresses do not specify a remote account.
+add-device-username-hint = No username specified. To choose an account, use { $example }.
 add-device-label = Label (optional)
 add-device-session = Remote session (optional)
 add-device-checking = Checking Herdr on { $target }…

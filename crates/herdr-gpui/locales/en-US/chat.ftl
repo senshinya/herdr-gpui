@@ -34,7 +34,7 @@ chat-show-chat = Chat
 # The composer.
 chat-composer-placeholder = Message the agent — / for commands, Shift-Enter for a new line
 chat-composer-closed = The agent cannot take prompts
-chat-read-only-hint = Continue this conversation in its terminal.
+chat-read-only-hint = Read-only
 chat-reply-in-terminal = Reply in terminal
 # Files copying to an SSH host before the prompt is sent. $host is its name.
 chat-copying-files = { $count ->

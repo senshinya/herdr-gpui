@@ -51,7 +51,7 @@ fn a_host_with_a_gpu_adds_a_line_and_a_status_item_once_shown(cx: &mut gpui::Tes
         view.status_bar_visible = false;
         view
     });
-    cx.simulate_resize(size(px(1000.), px(700.)));
+    cx.simulate_resize(size(px(1280.), px(700.)));
     cx.run_until_parked();
     cx.update(|window, cx| full_draw(window, cx).clear(cx));
     let header = cx.debug_bounds("host-local").unwrap();

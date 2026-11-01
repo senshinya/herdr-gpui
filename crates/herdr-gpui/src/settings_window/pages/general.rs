@@ -66,7 +66,7 @@ impl SettingsWindow {
             .child(self.language_row(cx))
             .child(
                 ui::row(theme, "general-ports", fl!("settings-general-ports"))
-                    .description(fl!("settings-general-ports-description"))
+                    .help(fl!("settings-general-ports-description"))
                     .switch(self.preference_toggle(
                         "general-ports-toggle",
                         self.config.show_listening_ports,
@@ -80,7 +80,7 @@ impl SettingsWindow {
                     "general-checkpoints",
                     fl!("settings-general-checkpoints"),
                 )
-                .description(fl!("settings-general-checkpoints-description"))
+                .help(fl!("settings-general-checkpoints-description"))
                 .switch(self.preference_toggle(
                     "general-checkpoints-toggle",
                     self.config.agent_checkpoints,
@@ -94,7 +94,7 @@ impl SettingsWindow {
                     "general-smooth-scroll",
                     fl!("settings-general-smooth-scroll"),
                 )
-                .description(fl!("settings-general-smooth-scroll-description"))
+                .help(fl!("settings-general-smooth-scroll-description"))
                 .switch(self.preference_toggle(
                     "general-smooth-scroll-toggle",
                     self.config.smooth_scroll,
@@ -109,7 +109,7 @@ impl SettingsWindow {
                         "general-window-controls",
                         fl!("settings-general-window-controls"),
                     )
-                    .description(fl!("settings-general-window-controls-description"))
+                    .help(fl!("settings-general-window-controls-description"))
                     .switch(self.preference_toggle(
                         "general-window-controls-toggle",
                         self.config.show_window_controls,
@@ -134,7 +134,7 @@ impl SettingsWindow {
                     "general-chat-layout",
                     fl!("settings-general-chat-layout"),
                 )
-                .description(fl!("settings-general-chat-layout-description"))
+                .help(fl!("settings-general-chat-layout-description"))
                 .control(ui::segmented(
                     theme,
                     "general-chat-layout-control",
@@ -162,7 +162,7 @@ impl SettingsWindow {
                     "general-chat-launcher",
                     fl!("settings-general-chat-launcher"),
                 )
-                .description(fl!("settings-general-chat-launcher-description"))
+                .help(fl!("settings-general-chat-launcher-description"))
                 .control(ui::segmented(
                     theme,
                     "general-chat-launcher-control",
@@ -180,7 +180,7 @@ impl SettingsWindow {
                     "general-chat-glide",
                     fl!("settings-general-chat-glide"),
                 )
-                .description(fl!("settings-general-chat-glide-description"))
+                .help(fl!("settings-general-chat-glide-description"))
                 .switch(self.preference_toggle(
                     "general-chat-glide-toggle",
                     self.config.chat.glide,
@@ -202,7 +202,7 @@ impl SettingsWindow {
                         fl!("settings-general-copy-on-select"),
                     )
                     .tag(ui::Source::Herdr)
-                    .description(fl!("settings-general-copy-on-select-description")),
+                    .help(fl!("settings-general-copy-on-select-description")),
                 )
                 .switch(
                     ui::toggle(theme, "general-copy-on-select-toggle", copy, ready).when(
@@ -297,7 +297,7 @@ impl SettingsWindow {
                     "general-update-beta",
                     fl!("settings-general-update-beta"),
                 )
-                .description(fl!("settings-general-update-beta-description"))
+                .help(fl!("settings-general-update-beta-description"))
                 .switch(self.preference_toggle(
                     "general-update-beta-toggle",
                     beta,
@@ -332,7 +332,7 @@ impl SettingsWindow {
                 let id = feature.setting_id();
                 let on = features.enabled(feature);
                 ui::row(&self.theme, id, i18n::message(feature.message(), &[]))
-                    .description(i18n::message(feature.description_message(), &[]))
+                    .help(i18n::message(feature.description_message(), &[]))
                     .switch(self.preference_toggle(
                         format!("{id}-toggle"),
                         on,
@@ -397,7 +397,7 @@ impl SettingsWindow {
                     "general-chat-full-width",
                     fl!("settings-general-chat-full-width"),
                 )
-                .description(fl!("settings-general-chat-full-width-description"))
+                .help(fl!("settings-general-chat-full-width-description"))
                 .switch(self.preference_toggle(
                     "general-chat-full-width-toggle",
                     full,
@@ -416,7 +416,7 @@ impl SettingsWindow {
                         "general-chat-width",
                         fl!("settings-general-chat-width"),
                     )
-                    .description(fl!("settings-general-chat-width-description"))
+                    .help(fl!("settings-general-chat-width-description"))
                     .control(ui::number(
                         &self.theme,
                         ui::Number {

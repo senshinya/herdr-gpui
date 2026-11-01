@@ -237,11 +237,22 @@ impl HerdrWindow {
                 "shortcut-editor-title",
                 command = crate::i18n::command(editor.info)
             )))
-            .child(editor.input.clone())
             .child(
                 div()
-                    .text_color(rgb(theme.muted))
-                    .child(fl!("shortcut-editor-hint")),
+                    .id("shortcut-input-help")
+                    .aria_description(fl!("shortcut-editor-hint"))
+                    .tooltip({
+                        let (foreground, surface) = (theme.foreground, theme.surface);
+                        move |_, cx| {
+                            cx.new(|_| crate::usage::Hint {
+                                text: fl!("shortcut-editor-hint").into(),
+                                foreground,
+                                surface,
+                            })
+                            .into()
+                        }
+                    })
+                    .child(editor.input.clone()),
             )
             .child(
                 div()

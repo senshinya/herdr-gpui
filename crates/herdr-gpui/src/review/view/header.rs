@@ -13,10 +13,6 @@ impl HerdrWindow {
         cx: &mut Context<Self>,
     ) -> Div {
         let theme = &self.theme;
-        let destination = match &review.agent {
-            Some(agent) => format!("Notes go to {}", agent.label),
-            None => "No agent in this workspace; notes can be copied".into(),
-        };
         div()
             .flex()
             .items_center()
@@ -85,13 +81,6 @@ impl HerdrWindow {
             )
             .child(self.render_review_layout(id, review.layout, cx))
             .child(self.render_review_panel_toggle(id, review, panels::Panel::Notes, cx))
-            .child(
-                div()
-                    .debug_selector(|| "review-destination".into())
-                    .flex_none()
-                    .text_color(rgb(theme.muted))
-                    .child(destination),
-            )
     }
 
     /// A square icon button of the header, lit when `on`.
@@ -107,8 +96,11 @@ impl HerdrWindow {
         div()
             .id(name)
             .debug_selector(move || name.into())
+            .role(Role::Button)
+            .aria_label(hint)
+            .aria_toggled(if on { Toggled::True } else { Toggled::False })
             .flex_none()
-            .size(px(22.))
+            .size(px(28.))
             .flex()
             .items_center()
             .justify_center()

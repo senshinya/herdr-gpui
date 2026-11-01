@@ -12,8 +12,7 @@ settings-search-empty = No settings match.
 settings-search-result = { $section } › { $title }
 settings-loading = Loading preferences...
 settings-finishing = Finishing preferences before closing...
-settings-saved = All changes saved.
-settings-saved-cloud = Account fields save with Save; sign-in and removal apply at once.
+settings-open-configuration = Open configuration settings
 # $drafts lists the unsaved parts, each one of the settings-draft- messages.
 settings-unsaved = Unsaved: { $drafts } — saved when this window closes
 settings-draft-theme = theme
@@ -252,3 +251,6 @@ settings-config-shared = Herdr configuration
 settings-config-shared-description = Herdr's configuration file, which its terminal client reads too.
 settings-config-reload = Reload configuration
 settings-config-reload-description = Re-reads both files. Does not restart the daemon.
+
+settings-section-tailscale = Tailscale
+settings-lead-tailscale = Connect Herdr directly to your Tailnet. Devices use your SSH credentials and the network's access rules.

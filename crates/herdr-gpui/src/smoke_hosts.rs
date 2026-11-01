@@ -1,6 +1,27 @@
 //! Native host routing, scoped repository, and decoy-window sidebar checks.
 use super::*;
 
+pub(super) fn start_hosts(handle: WindowHandle<HerdrWindow>, cx: &mut App) {
+    cx.set_global(sidebar::layout_tests::PaintedProbes::default());
+    cx.set_global(sidebar::layout_tests::VerifyChildGeometry(false));
+    let _ = handle.update(cx, |view, _, cx| {
+        view.config.layout.mode =
+            crate::config::LayoutMode::from(crate::config::Density::Comfortable);
+        cx.notify();
+    });
+    cx.spawn(async move |cx| match sidebar_hosts(handle, cx).await {
+        Ok(()) => {
+            eprintln!("SIDEBAR native hosts PASS: host routing, disabled selection, scoped repositories, resized glyphs, independent scroll and decoy window");
+            std::process::exit(0);
+        }
+        Err(error) => {
+            eprintln!("SIDEBAR native hosts FAIL: {error:#}");
+            std::process::exit(1);
+        }
+    })
+    .detach();
+}
+
 pub(super) async fn sidebar_hosts(
     handle: WindowHandle<HerdrWindow>,
     cx: &mut AsyncApp,

@@ -63,7 +63,10 @@ impl HerdrWindow {
                 };
                 let base = div()
                     .id(SharedString::from(format!("browser-tab-{id}")))
-                    .debug_selector(move || slot.selector(&format!("browser-tab-{id}")));
+                    .debug_selector(move || slot.selector(&format!("browser-tab-{id}")))
+                    .role(Role::Tab)
+                    .aria_label(tab_label(&tab.title))
+                    .aria_selected(shown == Some(id));
                 let face = TabFace {
                     label: tab_label(&tab.label()),
                     mark,

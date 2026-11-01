@@ -20,6 +20,7 @@ pub(super) mod rail;
 mod saved_warning;
 mod scope;
 mod setup;
+mod tailnet;
 mod wsl;
 
 pub(super) use add_device::Setup;

@@ -276,3 +276,13 @@ machines, adding a cloud machine, and approving an automation script. Say so
 when you run one, instead of waiting for it to finish. Run
 `herdr-gpui --help` to list every command, and `herdr-gpui COMMAND --help`
 for one.
+
+### Embedded Tailnet
+
+Use `herdr-gpui tailscale status --json` for the app's own embedded connection
+and `herdr-gpui tailscale peers --json [--offset N]` for up to 64 peers per page.
+`herdr-gpui tailscale devices` opens the searchable device list in Settings when connected.
+Authorization URLs and keys are never returned. `tailscale connect`,
+`tailscale disconnect` and `tailscale logout` open Settings > Tailscale; the
+user confirms the action there. These are independent of system Tailscale.
+Every command accepts `--window ID` and the common `--json` option.

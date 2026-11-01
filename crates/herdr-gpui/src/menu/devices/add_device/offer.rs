@@ -86,7 +86,7 @@ impl Offer {
 }
 
 /// `target` with a placeholder login, to show how to name another account.
-fn example_login(target: &str) -> String {
+pub(super) fn example_login(target: &str) -> String {
     with_user(target, &fl!("add-device-example-user"))
 }
 

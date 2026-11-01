@@ -17,11 +17,13 @@ mod language_reload;
 mod launch_at_login;
 mod layout_drafts;
 mod load_save;
+mod navigation_density;
 mod navigation_groups;
 mod navigation_resize;
 mod navigation_scroll;
 mod page_messages;
 mod pages_behaviour;
+mod quiet_layout;
 mod quit_saves;
 mod remote_control;
 mod remote_history_reload;
@@ -32,6 +34,10 @@ mod search;
 mod section_order;
 mod sidebar_drafts;
 mod tab_layout;
+mod tailscale;
+mod tailscale_columns;
+mod tailscale_connect;
+mod tailscale_devices;
 mod theme_drafts;
 // Saving a shared Herdr theme is Unix-only.
 mod theme_hover;
@@ -39,6 +45,7 @@ mod theme_mode;
 #[cfg(unix)]
 mod theme_recovery;
 mod theme_sources;
+mod typography;
 mod window_commands;
 mod window_lifecycle;
 

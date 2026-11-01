@@ -28,6 +28,19 @@ impl HerdrWindow {
                 div()
                     .id("device-setup-skip-host-key")
                     .debug_selector(|| "device-setup-skip-host-key".into())
+                    .role(Role::CheckBox)
+                    .aria_label(fl!("add-device-skip-host-key"))
+                    .aria_toggled(if skip { Toggled::True } else { Toggled::False })
+                    .when(editable, |row| row.track_focus(&setup.host_key_focus))
+                    .focus_visible(|row| {
+                        row.shadow(vec![BoxShadow {
+                            color: rgb(theme.primary()).into(),
+                            offset: point(px(0.), px(0.)),
+                            blur_radius: px(0.),
+                            spread_radius: px(2.),
+                            inset: true,
+                        }])
+                    })
                     .flex()
                     .items_center()
                     .gap(px(8.))

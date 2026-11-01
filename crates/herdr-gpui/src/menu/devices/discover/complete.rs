@@ -125,10 +125,9 @@ pub(in crate::menu::devices) struct Completion<'s> {
 }
 
 impl Completion<'_> {
-    /// The rest of the highlighted row's fill, drawn after the caret.
-    pub(in crate::menu::devices) fn ghost(&self, text: &str) -> Option<String> {
-        let fill = self.fills.get(self.highlight?)?;
-        Query::new(text).ghost(fill)
+    pub(in crate::menu::devices) fn highlighted_choice(&self) -> Option<(&str, &str)> {
+        let index = self.highlight?;
+        Some((&self.rows.get(index)?.name, self.fills.get(index)?))
     }
 }
 
@@ -212,10 +211,10 @@ impl HerdrWindow {
         let Some(setup) = &self.menu.device_setup else {
             return false;
         };
-        if !matches!(setup.step, Step::Form) {
+        if !matches!(setup.step, Step::Form) || !setup.picker.choosing() {
             return false;
         }
-        let text = setup.fields[0].read(cx).text().to_owned();
+        let text = setup.picker.query(cx);
         let completion = self.device_completion(setup, &text);
         match key {
             "up" | "down" => {

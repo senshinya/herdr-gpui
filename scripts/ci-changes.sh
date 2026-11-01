@@ -35,7 +35,7 @@ changed() {
 }
 
 code=$(changed \
-  crates assets .cargo scripts .github/workflows \
+  crates assets native .cargo scripts .github/workflows \
   Cargo.toml Cargo.lock rust-toolchain.toml rustfmt.toml .rustfmt.toml \
   clippy.toml .clippy.toml justfile mise.toml cliff.toml \
   ':(exclude)**/*.md' \
@@ -43,6 +43,7 @@ code=$(changed \
   ':(exclude)assets/icons/herdr-ui-icon-badge.*' \
   ':(exclude).github/workflows/site.yml')
 windows_package=$(changed \
+  native crates/herdr-remote/build.rs scripts/setup-tailscale-cgo.py \
   scripts/release/package-windows.py scripts/release/windows-installer.py \
   scripts/release/herdr-gpui.iss scripts/release/installer site/install.ps1 \
   crates/herdr-gpui-launcher crates/herdr-gpui/src/main.rs \

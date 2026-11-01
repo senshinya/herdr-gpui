@@ -594,7 +594,10 @@ impl Settings {
 
     /// Pure: no filesystem access; safe to use prepared settings on the UI thread.
     pub(crate) fn theme(&self, light: bool) -> crate::Result<crate::config::Theme> {
-        Ok(self.colors(light).theme())
+        Ok(self
+            .colors(light)
+            .theme()
+            .with_contrast(crate::contrast::Contrast::Standard))
     }
 
     /// Pure preview of a theme edit, retaining custom colors and legacy accent.

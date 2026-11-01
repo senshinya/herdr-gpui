@@ -18,7 +18,11 @@ pub(super) fn check_status_bar(
         let report = cx.debug_bounds("report-issue").unwrap();
         assert!(report.size.width >= px(33.));
         assert!(report.left() >= status.left());
-        assert!(report.right() <= status.right());
+        assert!(
+            report.right() <= status.right(),
+            "report {report:?}; bar {status:?}; viewport {}",
+            view.read_with(cx, |view, _| view.viewport_width)
+        );
         assert!(report.top() >= status.top());
         assert!(report.bottom() <= status.bottom());
         let version = cx

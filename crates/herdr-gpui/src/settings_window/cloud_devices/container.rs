@@ -138,6 +138,12 @@ fn state_text(engine: &str, state: Option<State>) -> String {
 }
 
 impl SettingsWindow {
+    pub(super) fn refresh_container_appearance(&self, cx: &mut Context<Self>) {
+        if let Some(card) = &self.container_card {
+            super::refresh_inputs(card.fields.iter(), &self.config, &self.theme, cx);
+        }
+    }
+
     pub(super) fn open_container_card(&mut self, cx: &mut Context<Self>) {
         if self.container_card.is_none() {
             self.container_card = Some(ContainerCard::new(&self.config, &self.theme, cx));
@@ -360,7 +366,6 @@ impl SettingsWindow {
         let mut new = self
             .cloud_card(fl!("settings-cloud-container-new"))
             .debug_selector(|| "cloud-container-new".into())
-            .child(self.control_note(fl!("settings-cloud-container-new-note")))
             .child(
                 self.control_switch(
                     "cloud-container-install",

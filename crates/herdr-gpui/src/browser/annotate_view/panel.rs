@@ -256,12 +256,11 @@ impl HerdrWindow {
                     .overflow_y_scroll()
                     .children(rows)
                     .when(!has_notes && armed, |list| {
-                        list.child(
-                            div()
-                                .p_2()
-                                .text_color(rgb(theme.muted))
-                                .child(fl!("browser-notes-empty")),
-                        )
+                        list.child(div().p_2().text_color(rgb(theme.muted)).child(if regions {
+                            fl!("browser-notes-empty-region")
+                        } else {
+                            fl!("browser-notes-empty")
+                        }))
                     }),
             )
             // A queued batch stays withdrawable after Clear sent empties the

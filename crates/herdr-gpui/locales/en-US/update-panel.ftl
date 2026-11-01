@@ -2,7 +2,6 @@
 # and showing its release notes. Versions and the notes are data.
 
 update-panel-title = App Updates
-update-panel-subtitle = Updates from GitHub
 update-panel-close = Close
 update-panel-current-version = Current version
 update-panel-latest-version = Latest version
@@ -40,7 +39,6 @@ update-panel-megabytes = { $amount } MB
 update-panel-downloaded = { $received } downloaded
 update-panel-progress = { $received } of { $total }
 update-panel-percent = { $percent }%
-update-panel-verified-note = Downloads are verified before installation. Your daemon and terminal sessions stay running.
 # Shown only in QA's synthetic update preview.
 update-panel-preview = QA preview
 update-panel-preview-note = Synthetic update state only. No network or installation is performed. Close or Escape dismisses this preview.

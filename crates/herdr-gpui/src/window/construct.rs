@@ -293,6 +293,7 @@ impl HerdrWindow {
             surface_signal,
             system_load: Default::default(),
             tab_drag: None,
+            tailnet_status: Default::default(),
             teleport: None,
             teleport_follow: None,
             teleport_marks,

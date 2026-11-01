@@ -202,6 +202,7 @@ impl Localize for Error {
             }
             Self::SystemLoad(error) => error.localize(),
             Self::TabLayout(error) => error.localize(),
+            Self::Tailnet(error) => error.localize(),
             Self::Toml(error) => error.to_string(),
             Self::TomlEdit(error) => error.to_string(),
             Self::Tunnel(error) => error.localize(),

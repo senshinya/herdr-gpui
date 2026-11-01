@@ -113,6 +113,8 @@ mod superset_badges;
 #[cfg(test)]
 mod superset_dots;
 #[cfg(test)]
+mod tailnet_status;
+#[cfg(test)]
 mod text_width;
 #[cfg(test)]
 mod update_download_caption;
@@ -667,6 +669,7 @@ pub(crate) fn fixture_window(window: &mut Window, cx: &mut Context<HerdrWindow>)
         pr_actions: Default::default(),
         usage: Default::default(),
         system_load: Default::default(),
+        tailnet_status: Default::default(),
         network_quality_seen: 0,
         devices_overview: Default::default(),
         checkpoints: Default::default(),

@@ -10,9 +10,6 @@ use crate::{
 };
 use gpui::{prelude::*, *};
 
-/// Suggestion rows shown before the list scrolls.
-pub(super) const MAX_VISIBLE_ROWS: f32 = 4.5;
-
 impl HerdrWindow {
     pub(in crate::menu::devices) fn render_device_suggestions(
         &self,
@@ -21,7 +18,7 @@ impl HerdrWindow {
         cx: &mut Context<Self>,
     ) -> Div {
         let theme = &self.theme;
-        let text = setup.fields[0].read(cx).text().to_owned();
+        let text = setup.picker.query(cx);
         let completion = self.device_completion(setup, &text);
         let status = if discovery.awaiting_local_network {
             fl!("devices-discover-waiting")
@@ -31,22 +28,17 @@ impl HerdrWindow {
                 sources = sources(&discovery.pending)
             )
         } else {
-            fl!("devices-discover-found", count = completion.unsaved)
+            String::new()
         };
-        let mut header = div()
-            .flex()
-            .items_center()
-            .gap(px(8.))
-            .child(div().flex_none().child(fl!("devices-discover-heading")))
-            .child(
-                div()
-                    .debug_selector(|| "device-discovery-status".into())
-                    .flex_1()
-                    // Wraps rather than cutting a longer language short.
-                    .min_w_0()
-                    .text_color(rgb(theme.muted))
-                    .child(status),
-            );
+        let mut header = div().flex().items_center().gap(px(8.)).child(
+            div()
+                .debug_selector(|| "device-discovery-status".into())
+                .flex_1()
+                // Wraps rather than cutting a longer language short.
+                .min_w_0()
+                .text_color(rgb(theme.muted))
+                .child(status),
+        );
         if !discovery.searching() {
             header = header.child(
                 div()
@@ -64,7 +56,8 @@ impl HerdrWindow {
         }
         let mut view = div()
             .debug_selector(|| "device-discovery".into())
-            .flex_none()
+            .flex_1()
+            .min_h_0()
             .flex()
             .flex_col()
             .gap(px(6.))
@@ -77,16 +70,15 @@ impl HerdrWindow {
                 rgb(theme.active).into(),
             ));
         }
-        // A long list scrolls by itself rather than pushing the label and
-        // session fields out of the dialog; half a row shows there is more.
+        // The picker owns the viewport; the connection form is a separate step.
         let row = (self.config.ui.size * 1.6 + 12.).ceil();
         let mut list = div()
             .id("device-suggestions")
             .debug_selector(|| "device-suggestions".into())
-            .flex_none()
+            .flex_1()
+            .min_h_0()
             .flex()
             .flex_col()
-            .max_h(px(row * MAX_VISIBLE_ROWS))
             .overflow_y_scroll()
             .track_scroll(&setup.suggestion_scroll);
         for (index, (suggestion, target)) in completion
@@ -138,6 +130,14 @@ impl HerdrWindow {
                     })),
             );
         }
+        if completion.rows.is_empty() && !discovery.searching() {
+            list = list.child(
+                div()
+                    .py(px(10.))
+                    .text_color(rgb(theme.muted))
+                    .child(fl!("devices-picker-empty")),
+            );
+        }
         view = view.child(list);
         for (source, error) in &discovery.failures {
             view = view.child(div().text_color(rgb(theme.muted)).child(fl!(
@@ -174,6 +174,8 @@ impl HerdrWindow {
         if !matches!(setup.step, super::super::add_device::Step::Form) {
             return;
         }
+        setup.tailnet_peer = None;
+        setup.picker.select_nearby(name, target);
         let [target_field, label_field, _] = setup.fields.clone();
         target_field.update(cx, |field, cx| field.set_text_selected(target, cx));
         let label = label_field.read(cx).text().trim();

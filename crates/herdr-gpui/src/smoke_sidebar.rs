@@ -100,6 +100,11 @@ pub fn start_sidebar(handle: WindowHandle<HerdrWindow>, cx: &mut App) {
         start_pages(handle, cx);
         return;
     }
+    #[cfg(target_os = "macos")]
+    if std::env::var_os("HERDR_TEST_HOSTS_ONLY").is_some() {
+        hosts::start_hosts(handle, cx);
+        return;
+    }
     EXIT_CODE.store(1, Ordering::SeqCst);
     // AppKit may exit(0) inside cx.quit(), bypassing main's ExitCode. These
     // daemon-free fixtures exit explicitly, like the performance driver.
@@ -147,10 +152,19 @@ pub fn start_sidebar(handle: WindowHandle<HerdrWindow>, cx: &mut App) {
             }
         }
         #[cfg(target_os = "macos")]
-        if let Err(error) = sidebar_preferences(handle, cx).await {
-            eprintln!("SIDEBAR native preferences FAIL: {error:#}");
-            cx.update(|cx| cx.quit());
-            return;
+        {
+            if std::env::var_os("HERDR_TEST_SKIP_SETTINGS").is_none()
+                && let Err(error) = sidebar_preferences(handle, cx).await
+            {
+                eprintln!("SIDEBAR native preferences FAIL: {error:#}");
+                cx.update(|cx| cx.quit());
+                return;
+            }
+            if std::env::var_os("HERDR_TEST_SETTINGS_ONLY").is_some() {
+                EXIT_CODE.store(0, Ordering::SeqCst);
+                cx.update(|cx| cx.quit());
+                return;
+            }
         }
         // Frames verified at their full size; the rest were skipped as larger
         // than the display.
@@ -520,12 +534,11 @@ pub fn start_sidebar(handle: WindowHandle<HerdrWindow>, cx: &mut App) {
         for (width, height) in [(640., 400.), (1200., 780.)] {
             let _ = handle.update(cx, |_, window, _| window.resize(size(px(width), px(height))));
             timer.timer(Duration::from_millis(100)).await;
-            for (keys, action) in [
-                ("down enter", menu::WorkspaceAction::Rename),
-                ("down down enter", menu::WorkspaceAction::Close),
-                ("down down down enter", menu::WorkspaceAction::NewWorktree),
-                // Linked checkouts offer NewWorktree before DeleteWorktree too.
-                ("down down down down enter", menu::WorkspaceAction::DeleteWorktree),
+            for action in [
+                menu::WorkspaceAction::Rename,
+                menu::WorkspaceAction::Close,
+                menu::WorkspaceAction::NewWorktree,
+                menu::WorkspaceAction::DeleteWorktree,
             ] {
                 let point = handle.update(cx, |view, window, cx| {
                     view.live.status = ConnectionStatus::Connected;
@@ -570,6 +583,20 @@ pub fn start_sidebar(handle: WindowHandle<HerdrWindow>, cx: &mut App) {
                     })?;
                     cx.default_global::<sidebar::layout_tests::PaintedProbes>().0.clear();
                     window.draw(cx).clear(cx);
+                    // The short window scrolls this popover. Bring the PR
+                    // card into view before judging its native glyph runs.
+                    let scroll = cx.global::<sidebar::layout_tests::PaintedProbes>().0.iter()
+                        .find(|(text, probe)| text.starts_with("#8 ") && probe.clipped)
+                        .map(|(_, probe)| probe.mask.center());
+                    if let Some(position) = scroll {
+                        window.dispatch_event(PlatformInput::ScrollWheel(ScrollWheelEvent {
+                            position,
+                            delta: ScrollDelta::Pixels(Point { x: px(0.), y: px(-1000.) }),
+                            ..Default::default()
+                        }), cx);
+                        cx.default_global::<sidebar::layout_tests::PaintedProbes>().0.clear();
+                        window.draw(cx).clear(cx);
+                    }
                     let probes = &cx.global::<sidebar::layout_tests::PaintedProbes>().0;
                     for (text, probe) in probes.iter().filter(|(text, _)| text.starts_with("#8 ") || matches!(text.as_str(), "+1730" | "-31")) {
                         if probe.glyph_text != probe.cached || probe.clipped || probe.glyph_text.is_empty() {
@@ -591,6 +618,8 @@ pub fn start_sidebar(handle: WindowHandle<HerdrWindow>, cx: &mut App) {
                         bail!("native PR summary is oversized or outside the viewport");
                     }
                     let before = view.read(cx).input_probe;
+                    let steps = menu::native_dialog_steps(view.read(cx), action).context("missing native workspace action")?;
+                    let keys = format!("{}enter", "down ".repeat(steps));
                     for key in keys.split(' ') {
                         window.dispatch_keystroke(Keystroke::parse(key)?, cx);
                     }
@@ -722,7 +751,8 @@ pub fn start_sidebar(handle: WindowHandle<HerdrWindow>, cx: &mut App) {
             }
         }
         #[cfg(target_os = "macos")]
-        if let Err(error) = sidebar_hosts(handle, cx).await {
+        if std::env::var_os("HERDR_TEST_SKIP_HOSTS").is_none()
+            && let Err(error) = sidebar_hosts(handle, cx).await {
             eprintln!("SIDEBAR native hosts FAIL: {error:#}");
             std::process::exit(1);
         }
@@ -731,7 +761,7 @@ pub fn start_sidebar(handle: WindowHandle<HerdrWindow>, cx: &mut App) {
             eprintln!("SIDEBAR native paint FAIL: {probes:?}");
             std::process::exit(1);
         }
-        eprintln!("SIDEBAR native PASS: {cascade}; {drawn}/72 Menlo draws (the rest larger than the display), flat and rounded normal/compact/comfortable layouts at 4 sizes, collapse/expand, menu isolation, PR title/stats glyphs, GitHub auth fixtures, right-click dialogs and Unicode fields at 2 sizes; host routing, disabled selection, scoped repositories, resized host/agent glyphs, independent scroll and decoy key window");
+        eprintln!("SIDEBAR native PASS: {cascade}; {drawn}/72 Menlo draws (the rest larger than the display), flat and rounded normal/compact/comfortable layouts at 4 sizes, collapse/expand, menu isolation, PR title/stats glyphs, GitHub auth fixtures, right-click dialogs and Unicode fields at 2 sizes");
         std::process::exit(0);
     })
     .detach();

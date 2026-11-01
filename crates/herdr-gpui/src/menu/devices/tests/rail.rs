@@ -117,6 +117,7 @@ fn switching_sources_keeps_what_the_ssh_form_holds(cx: &mut gpui::TestAppContext
     if crate::cloud::unavailable().is_some() {
         return;
     }
+    click(cx, "device-picker-manual");
     cx.update(|_, cx| {
         let target = view.read(cx).menu.device_setup.as_ref().unwrap().fields[0].clone();
         target.update(cx, |field, cx| field.set_text_selected("me@build-box", cx));

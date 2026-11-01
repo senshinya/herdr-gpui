@@ -1,7 +1,11 @@
-//! Requires an active native desktop and an explicitly selected daemon executable.
+//! Ignored live checks need desktop/daemon resources; helper regressions are headless.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::disallowed_methods)]
 #[path = "../../test-support/sandbox.rs"]
 mod sandbox;
+
+#[cfg(unix)]
+#[path = "live_gui/tailscale_proxy.rs"]
+mod tailscale_proxy;
 
 #[cfg(target_os = "macos")]
 #[path = "support/clipboard_guard.rs"]
@@ -47,6 +51,20 @@ fn gui_command(sandbox: &Sandbox, mut env: impl FnMut(&str) -> Option<OsString>)
 #[ignore = "requires active native desktop; GUI-only fixtures, no daemon"]
 fn native_sidebar() {
     native_fixture(Fixture::Sidebar);
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+#[ignore = "requires active native desktop; isolated preferences, no daemon"]
+fn native_sidebar_settings() {
+    native_fixture(Fixture::Settings);
+}
+
+#[cfg(target_os = "macos")]
+#[test]
+#[ignore = "requires active native desktop; isolated host routing, no daemon"]
+fn native_sidebar_hosts() {
+    native_fixture(Fixture::Hosts);
 }
 
 #[cfg(target_os = "linux")]
@@ -107,6 +125,10 @@ fn native_input_shutdown(field: &'static str) {
 
 enum Fixture {
     Sidebar,
+    #[cfg(target_os = "macos")]
+    Settings,
+    #[cfg(target_os = "macos")]
+    Hosts,
     #[cfg(target_os = "linux")]
     ApplicationMenus,
     Notifications,
@@ -152,6 +174,10 @@ fn native_fixture(fixture: Fixture) {
     }
     assert!(status.success(), "native sidebar failed: {status}");
     assert!(log.contains(match fixture {
+        #[cfg(target_os = "macos")]
+        Fixture::Settings => "SIDEBAR native standalone settings PASS:",
+        #[cfg(target_os = "macos")]
+        Fixture::Hosts => "SIDEBAR native hosts PASS",
         #[cfg(target_os = "linux")]
         Fixture::ApplicationMenus => "APPLICATION MENUS native PASS",
         Fixture::Notifications => "NOTIFICATIONS native PASS:",
@@ -170,11 +196,26 @@ fn run_fixture(fixture: &Fixture) -> Option<(ExitStatus, String)> {
         gui: None,
     };
     let mut command = gui_command(&isolated.sandbox, |name| std::env::var_os(name));
+    // Keep each native scenario within its bounded deadline as the
+    // preferences and sidebar workflows grow independently.
+    #[cfg(target_os = "macos")]
+    if matches!(fixture, Fixture::Sidebar | Fixture::InvalidChildWidth) {
+        command.env("HERDR_TEST_SKIP_SETTINGS", "1");
+        command.env("HERDR_TEST_SKIP_HOSTS", "1");
+    }
     if let Some(path) = std::env::var_os("HERDR_TEST_SETTINGS_CAPTURE") {
         command.env("HERDR_TEST_SETTINGS_CAPTURE", path);
     }
     match fixture {
         Fixture::Sidebar => {}
+        #[cfg(target_os = "macos")]
+        Fixture::Settings => {
+            command.env("HERDR_TEST_SETTINGS_ONLY", "1");
+        }
+        #[cfg(target_os = "macos")]
+        Fixture::Hosts => {
+            command.env("HERDR_TEST_HOSTS_ONLY", "1");
+        }
         #[cfg(target_os = "linux")]
         Fixture::ApplicationMenus => {
             command.env("HERDR_TEST_APPLICATION_MENUS", "1");

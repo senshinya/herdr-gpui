@@ -43,6 +43,8 @@ impl HerdrWindow {
                         div()
                             .id(("chat-answer", permission.id.0 * 64 + index as u64))
                             .debug_selector(move || format!("chat-answer-{index}"))
+                            .role(Role::Button)
+                            .aria_label(safe_text(&option.name, 60))
                             .flex_none()
                             .px(px(10.))
                             .py(px(3.))

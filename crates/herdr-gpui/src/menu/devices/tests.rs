@@ -18,6 +18,7 @@ mod fold;
 mod host_key;
 mod host_key_choice;
 mod key_login;
+mod keyboard_form;
 mod local_network;
 #[cfg(feature = "cloud")]
 mod rail;
@@ -27,6 +28,7 @@ mod selection;
 mod setup_activation;
 #[cfg(unix)]
 mod setup_workspace;
+mod tailnet_retry;
 mod version_warning;
 
 #[test]
@@ -60,7 +62,12 @@ fn only_a_present_herdr_is_saved_without_a_terminal() {
 }
 
 fn open_form(view: &mut HerdrWindow, step: Step, cx: &mut Context<HerdrWindow>) {
+    let mut picker = super::add_device::Picker::new(&view.config.ui, &view.theme, cx);
+    picker.enter_details();
     view.menu.device_setup = Some(Setup {
+        picker,
+        tailnet_peer: None,
+        tailnet_poll: None,
         fields: std::array::from_fn(|_| cx.new(SearchInput::new)),
         step,
         claim: None,
@@ -72,6 +79,8 @@ fn open_form(view: &mut HerdrWindow, step: Step, cx: &mut Context<HerdrWindow>) 
         suggestion_scroll: gpui::ScrollHandle::new(),
         error: None,
         host_keys: herdr_client::HostKeys::Verify,
+        host_key_focus: cx.focus_handle(),
+        submit_focus: cx.focus_handle(),
     });
     view.menu.page = Some(Page::AddDevice);
 }

@@ -91,7 +91,7 @@ impl SettingsWindow {
             ))
             .child(
                 ui::row(theme, "status-usage", fl!("settings-status-usage"))
-                    .description(fl!("settings-status-bar-usage-hint"))
+                    .help(fl!("settings-status-bar-usage-hint"))
                     .control(self.detail_control(
                         "status-usage-detail",
                         items.usage,
@@ -113,7 +113,7 @@ impl SettingsWindow {
                     "status-system-load",
                     fl!("settings-status-system-load"),
                 )
-                .description(fl!("settings-status-system-load-description"))
+                .help(fl!("settings-status-system-load-description"))
                 .control(self.detail_control(
                     "status-system-load-detail",
                     items.system_load,
@@ -130,7 +130,7 @@ impl SettingsWindow {
             )
             .child(
                 ui::row(theme, "status-gpu", fl!("settings-status-gpu"))
-                    .description(fl!("settings-status-bar-gpu-hint"))
+                    .help(fl!("settings-status-bar-gpu-hint"))
                     .control(self.detail_control(
                         "status-gpu-detail",
                         items.gpu_detail,
@@ -151,7 +151,7 @@ impl SettingsWindow {
                     "status-network-quality",
                     fl!("settings-status-network-quality"),
                 )
-                .description(fl!("settings-status-network-quality-description"))
+                .help(fl!("settings-status-network-quality-description"))
                 .switch(self.preference_toggle(
                     "status-network-quality-toggle",
                     network_quality,
@@ -165,7 +165,7 @@ impl SettingsWindow {
                     "status-keep-awake",
                     fl!("settings-status-keep-awake"),
                 )
-                .description(fl!("settings-status-keep-awake-description"))
+                .help(fl!("settings-status-keep-awake-description"))
                 .control(ui::segmented(
                     theme,
                     "status-keep-awake-scope",

@@ -114,6 +114,7 @@ class RepackTests(unittest.TestCase):
             PACKAGE.add(release, f"{ROOT}/herdr-automate.exe", self.automate)
             PACKAGE.add(release, f"{ROOT}/herdr-nearby.exe", self.nearby)
             PACKAGE.add(release, f"{ROOT}/herdr-core.exe", self.core)
+            PACKAGE.add(release, f"{ROOT}/herdr_tailscale.dll", self.core)
             PACKAGE.add(release, f"{ROOT}/licenses/LICENSE", b"license")
         self.output = self.work / "signed"
         self.output.mkdir()
@@ -128,6 +129,7 @@ class RepackTests(unittest.TestCase):
         (root / "herdr-automate.exe").write_bytes(sign(self.automate))
         (root / "herdr-nearby.exe").write_bytes(sign(self.nearby))
         (root / "herdr-core.exe").write_bytes(sign(self.core))
+        (root / "herdr_tailscale.dll").write_bytes(sign(self.core))
         return root
 
     def test_repacks_the_signed_tree_in_the_zips_order(self):

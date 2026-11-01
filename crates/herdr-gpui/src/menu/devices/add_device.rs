@@ -4,6 +4,9 @@
 use super::{Page, discover::Discovery, setup};
 
 mod offer;
+pub(super) mod picker;
+mod render;
+pub(super) use picker::Picker;
 
 use crate::i18n::fl;
 use crate::{
@@ -19,6 +22,9 @@ pub(super) use offer::Offer;
 
 pub(in crate::menu) struct Setup {
     pub(super) fields: [Entity<SearchInput>; 3],
+    pub(super) picker: Picker,
+    pub(super) tailnet_peer: Option<crate::tailnet::Selection>,
+    pub(super) tailnet_poll: Option<Task<()>>,
     pub(super) step: Step,
     /// This process's claim on the host being added, from the first check
     /// until the device is saved or the dialog closes.
@@ -42,6 +48,8 @@ pub(in crate::menu) struct Setup {
     pub(super) suggestion_scroll: ScrollHandle,
     /// Whether the host's key is checked; see `host_key_choice`.
     pub(super) host_keys: HostKeys,
+    pub(super) host_key_focus: FocusHandle,
+    pub(super) submit_focus: FocusHandle,
 }
 
 /// Where adding a device stands. Each step after `Form` belongs to the request
@@ -129,21 +137,37 @@ impl HerdrWindow {
             }
             cx.notify();
         });
+        let picker = Picker::new(&self.config.ui, &self.theme, cx);
+        let search_changed = cx.subscribe(picker.input(), |this, _, _: &Changed, cx| {
+            if let Some(setup) = &mut this.menu.device_setup {
+                setup.highlight = None;
+                setup.picker.highlighted_peer = None;
+                setup.suggestion_scroll.set_offset(Point::default());
+            }
+            cx.notify();
+        });
+        window.focus(&picker.input().read(cx).focus.clone(), cx);
         self.menu.device_setup = Some(Setup {
+            picker,
             fields,
+            tailnet_peer: None,
+            tailnet_poll: None,
             step: Step::Form,
             claim: None,
             task: None,
             discovery: None,
             suggested_label: None,
-            _edits: vec![label_edits, target_edits],
+            _edits: vec![label_edits, target_edits, search_changed],
             highlight: None,
             suggestion_scroll: ScrollHandle::new(),
             error: None,
             host_keys: HostKeys::Verify,
+            host_key_focus: cx.focus_handle(),
+            submit_focus: cx.focus_handle(),
         });
         self.menu.page = Some(Page::AddDevice);
         self.start_device_discovery(cx);
+        self.start_tailnet_devices(cx);
     }
 
     /// Route a key to the Add Device form. Returns `false` when the key is
@@ -164,6 +188,9 @@ impl HerdrWindow {
             // The completed form has no editable fields or further setup action.
             return true;
         }
+        if form.picker.choosing() {
+            return self.device_picker_key(event, window, cx);
+        }
         if form
             .fields
             .iter()
@@ -173,9 +200,26 @@ impl HerdrWindow {
         }
         let key = event.keystroke.key.as_str();
         let modifiers = event.keystroke.modifiers;
-        let in_target = form.fields[0].read(cx).focus.is_focused(window);
-        let plain = !(modifiers.shift || modifiers.platform || modifiers.control || modifiers.alt);
-        if in_target && plain && self.complete_device_target(key, window, cx) {
+        if modifiers.control || modifiers.platform || modifiers.alt {
+            return false;
+        }
+        if matches!(form.step, Step::Form)
+            && form.host_key_focus.is_focused(window)
+            && matches!(key, "enter" | "space")
+        {
+            self.toggle_host_key_choice(cx);
+            return true;
+        }
+        if matches!(form.step, Step::Form) && form.submit_focus.is_focused(window) && key == "space"
+        {
+            self.submit_device_setup(cx);
+            return true;
+        }
+        if matches!(form.step, Step::Form)
+            && form.picker.back_focus.is_focused(window)
+            && matches!(key, "enter" | "space")
+        {
+            self.show_device_picker(window, cx);
             return true;
         }
         let Some(form) = &self.menu.device_setup else {
@@ -183,208 +227,28 @@ impl HerdrWindow {
         };
         match key {
             "tab" => {
-                let index = form
-                    .fields
+                let mut focus = Vec::new();
+                if matches!(form.step, Step::Form) {
+                    focus.push(form.picker.back_focus.clone());
+                }
+                focus.extend(form.fields.iter().map(|field| field.read(cx).focus.clone()));
+                if matches!(form.step, Step::Form) {
+                    focus.push(form.host_key_focus.clone());
+                    focus.push(form.submit_focus.clone());
+                }
+                let index = focus
                     .iter()
-                    .position(|field| field.read(cx).focus.is_focused(window))
+                    .position(|focus| focus.is_focused(window))
                     .unwrap_or(0);
-                let next = (index + if modifiers.shift { 2 } else { 1 }) % 3;
-                window.focus(&form.fields[next].read(cx).focus.clone(), cx);
+                let next =
+                    (index + if modifiers.shift { focus.len() - 1 } else { 1 }) % focus.len();
+                window.focus(&focus[next], cx);
             }
             "enter" => self.submit_device_setup(cx),
             "escape" => self.dismiss_menu(window, cx),
             _ => return false,
         }
         true
-    }
-
-    pub(in crate::menu) fn render_add_device(
-        &self,
-        compact: bool,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
-        let theme = &self.theme;
-        let frame = |pane: Div, cx: &mut Context<Self>| {
-            self.add_device_frame(
-                "device-setup-dialog",
-                "device-setup-close",
-                compact,
-                pane,
-                cx,
-            )
-        };
-        let Some(setup) = &self.menu.device_setup else {
-            return frame(div(), cx);
-        };
-        if let Step::SavedWarning(warning) = setup.step {
-            return frame(self.render_device_saved_warning(warning, cx), cx);
-        }
-        let ghost = matches!(setup.step, Step::Form)
-            .then(|| {
-                let text = setup.fields[0].read(cx).text().to_owned();
-                self.device_completion(setup, &text).ghost(&text)
-            })
-            .flatten();
-        setup.fields[0].update(cx, |field, cx| field.set_completion(ghost, cx));
-        let mut body = div()
-            .id("device-setup-body")
-            .debug_selector(|| "device-setup-body".into())
-            .flex_1()
-            .min_h_0()
-            .overflow_y_scroll()
-            .p(px(16.))
-            .flex()
-            .flex_col()
-            .gap(px(12.))
-            .child(
-                div()
-                    .flex_none()
-                    .text_color(rgb(theme.subtext()))
-                    .child(fl!("add-device-intro")),
-            );
-        for (index, (label, field)) in [
-            fl!("add-device-target"),
-            fl!("add-device-label"),
-            fl!("add-device-session"),
-        ]
-        .into_iter()
-        .zip(&setup.fields)
-        .enumerate()
-        {
-            body = body.child(
-                div()
-                    .flex_none()
-                    .flex()
-                    .flex_col()
-                    .gap(px(6.))
-                    .child(label)
-                    .child(field.clone()),
-            );
-            // Suggestions fill the target, so they sit right under it, and
-            // only while the form can still take one.
-            if index == 0
-                && matches!(setup.step, Step::Form)
-                && let Some(discovery) = &setup.discovery
-            {
-                body = body.child(self.render_device_suggestions(setup, discovery, cx));
-            }
-        }
-        body = body.child(self.render_host_key_choice(setup, cx));
-        if let Some(error) = &setup.error {
-            body = body.child(
-                div()
-                    .flex_none()
-                    .text_color(crate::menu::danger(theme))
-                    .child(error.clone()),
-            );
-        }
-        let status = match &setup.step {
-            Step::Form => None,
-            Step::Checking(request) => Some(fl!("add-device-checking", target = request.target())),
-            Step::AwaitingLocalNetwork(request) => {
-                Some(super::local_network::waiting_status(request.target()))
-            }
-            Step::Saving(request, HostProbe::Stopped) => {
-                Some(fl!("add-device-starting", target = request.target()))
-            }
-            Step::Saving(request, _) => Some(fl!("add-device-saving", target = request.target())),
-            Step::Saved | Step::SavedWarning(_) => None,
-            Step::FetchingKey(request) => {
-                Some(fl!("add-device-fetching-key", target = request.target()))
-            }
-            Step::TrustKey(request, key) => {
-                body = body.child(self.render_host_key(request.target(), key));
-                None
-            }
-            Step::Confirm(request, offer) => Some(offer.question(
-                request.target(),
-                setup.claim.as_ref().map(setup::Claim::user),
-            )),
-            Step::Verifying(request, _) => {
-                Some(fl!("add-device-verifying", target = request.target()))
-            }
-            Step::Activating(..) | Step::Opening(..) => Some(fl!("add-device-opening")),
-        };
-        if let Some(status) = status {
-            body = body.child(
-                div()
-                    .debug_selector(|| "device-setup-status".into())
-                    .flex_none()
-                    .text_color(rgb(theme.muted))
-                    .child(status),
-            );
-        }
-        let button = |id: &'static str, label: SharedString, enabled: bool| {
-            div()
-                .id(id)
-                .debug_selector(move || id.into())
-                .p(px(8.))
-                .rounded(px(crate::config::corners::CONTROL))
-                .bg(rgb(theme.active))
-                .when(enabled, |button| {
-                    button.cursor_pointer().hover(|s| {
-                        s.bg(rgb(theme.active).blend(rgba((theme.foreground << 8) | 0x20)))
-                    })
-                })
-                .when(!enabled, |button| button.text_color(rgb(theme.muted)))
-                .child(label)
-        };
-        let mut footer = div()
-            .debug_selector(|| "device-setup-footer".into())
-            .flex_none()
-            .p(px(16.))
-            .border_t_1()
-            .border_color(rgb(theme.active))
-            .flex()
-            .justify_end()
-            .gap(px(8.));
-        let cancel = button("device-setup-cancel", fl!("add-device-cancel").into(), true)
-            .on_click(cx.listener(|this, _, _, cx| this.cancel_device_step(cx)));
-        footer = match &setup.step {
-            Step::Confirm(..) if cfg!(windows) => footer.child(cancel),
-            Step::Confirm(_, offer) => footer.child(cancel).child(
-                button("device-setup-submit", offer.action().into(), true)
-                    .on_click(cx.listener(|this, _, _, cx| this.open_setup_space(cx))),
-            ),
-            Step::AwaitingLocalNetwork(_) => footer
-                .children(self.local_network_settings_button("device-setup-settings", cx))
-                .child(cancel),
-            // Enter does not trust a key: only this button does.
-            Step::TrustKey(..) => footer.child(cancel).child(
-                button(
-                    "device-setup-trust",
-                    fl!("add-device-trust-key").into(),
-                    true,
-                )
-                .on_click(cx.listener(|this, _, _, cx| this.trust_host_key(cx))),
-            ),
-            step => {
-                let ready = matches!(step, Step::Form);
-                footer.child(
-                    button(
-                        "device-setup-submit",
-                        if ready {
-                            fl!("add-device-submit")
-                        } else {
-                            fl!("add-device-submit-checking")
-                        }
-                        .into(),
-                        ready,
-                    )
-                    .on_click(cx.listener(|this, _, _, cx| this.submit_device_setup(cx))),
-                )
-            }
-        };
-        frame(
-            div()
-                .flex_1()
-                .min_h_0()
-                .flex()
-                .flex_col()
-                .child(body)
-                .child(footer),
-            cx,
-        )
     }
 
     /// Refuse a host already in the catalog. Checked again before each step
@@ -418,7 +282,11 @@ impl HerdrWindow {
             form.fields[1].read(cx).text(),
             form.fields[2].read(cx).text(),
         )
-        .map(|request| request.with_host_keys(form.host_keys));
+        .map(|request| {
+            request
+                .with_host_keys(form.host_keys)
+                .with_tailnet(form.tailnet_peer.clone())
+        });
         let request = match request.and_then(|request| {
             self.ensure_new_device(&request)?;
             Ok(request)
@@ -440,12 +308,21 @@ impl HerdrWindow {
         // Claim before probing: a second add of this host, from any window of
         // this process, is refused from here on rather than after a slow probe.
         let background = cx.background_executor().spawn(async move {
-            let claim = setup::claim(&request)?;
-            Ok::<_, crate::Error>((claim, request.probe()))
+            let mut request = request;
+            let result = request.prepare_tailnet().and_then(|()| {
+                let claim = setup::claim(&request)?;
+                Ok((claim, request.probe()))
+            });
+            (request, result)
         });
         form.task = Some(cx.spawn(async move |this, cx| {
-            let result = background.await;
-            let _ = this.update(cx, |this, cx| this.device_probed(result, cx));
+            let (request, result) = background.await;
+            let _ = this.update(cx, |this, cx| {
+                if let Some(form) = &mut this.menu.device_setup {
+                    form.step = Step::Checking(request);
+                }
+                this.device_probed(result, cx);
+            });
         }));
         cx.notify();
     }
@@ -488,7 +365,9 @@ impl HerdrWindow {
             Ok(result) => result,
             Err(error) => {
                 tracing::warn!(category = "device_setup", "Could not claim device");
-                if !self.refuse_duplicate(&error, cx) {
+                if !self.refuse_duplicate(&error, cx)
+                    && !self.require_prepared_tailnet(&request, cx)
+                {
                     self.set_device_error(Some(fl!(
                         "add-device-check-failed",
                         target = request.target(),
@@ -527,6 +406,10 @@ impl HerdrWindow {
                 form.step = Step::Form;
             }
             cx.notify();
+            return;
+        }
+        if request.is_tailnet() && !matches!(probe, Ok(HostProbe::Running | HostProbe::Stopped)) {
+            self.require_prepared_tailnet(&request, cx);
             return;
         }
         let offer = match probe {
@@ -634,6 +517,24 @@ impl HerdrWindow {
         }
     }
 
+    // The external setup terminal cannot inherit this process's network.
+    fn require_prepared_tailnet(
+        &mut self,
+        request: &setup::Request,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        if !request.is_tailnet() {
+            return false;
+        }
+        if let Some(form) = &mut self.menu.device_setup {
+            form.step = Step::Form;
+            form.claim = None;
+        }
+        self.set_device_error(Some(fl!("tailnet-setup-required")));
+        cx.notify();
+        true
+    }
+
     /// Check the catalog on disk once more, then ask the local daemon for a
     /// workspace whose root pane runs the setup (see `poll_device_setup`).
     fn open_setup_space(&mut self, cx: &mut Context<Self>) {
@@ -644,6 +545,12 @@ impl HerdrWindow {
             return;
         };
         let (request, offer) = (request.clone(), *offer);
+        if self.require_prepared_tailnet(&request, cx) {
+            return;
+        }
+        let Some(form) = &mut self.menu.device_setup else {
+            return;
+        };
         let claim = form.claim.take();
         form.step = Step::Verifying(request.clone(), offer);
         form.error = None;

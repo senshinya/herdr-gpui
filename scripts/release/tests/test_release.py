@@ -160,6 +160,7 @@ class ReleaseTests(unittest.TestCase):
         nearby.write_bytes(b"bluetooth helper")
         core = self.work / "herdr-core.exe"
         core.write_bytes(b"herdr-core daemon")
+        (self.work / "herdr_tailscale.dll").write_bytes(b"embedded tailscale")
         target = "x86_64-pc-windows-msvc"
         output = Path(self.run_windows("20260920.3", target, binary, launcher, self.work, self.notices).stdout.strip())
         self.assertEqual(output, self.work.resolve() / f"Herdr-20260920.3-{target}.zip")
@@ -167,7 +168,7 @@ class ReleaseTests(unittest.TestCase):
         with zipfile.ZipFile(output) as archive:
             self.assertIsNone(archive.testzip())
             self.assertEqual(set(archive.namelist()), {base + p for p in [
-                "herdr-gpui.exe", "herdr-gpui-launcher.exe", "herdr-acp.exe", "herdr-remote-control.exe", "herdr-automate.exe", "herdr-nearby.exe", "herdr-core.exe", "licenses/LICENSE", "licenses/NOTICE", "licenses/LICENSE-octicons",
+                "herdr-gpui.exe", "herdr-gpui-launcher.exe", "herdr-acp.exe", "herdr-remote-control.exe", "herdr-automate.exe", "herdr-nearby.exe", "herdr-core.exe", "herdr_tailscale.dll", "licenses/LICENSE", "licenses/NOTICE", "licenses/LICENSE-octicons",
                 "licenses/LICENSE-APACHE", "licenses/NOTICE.md", "licenses/SOUND-NOTICE.md",
                 "licenses/THIRD-PARTY-NOTICES.txt", "licenses/HERDR-CORE-LICENSES.txt",
             ]})

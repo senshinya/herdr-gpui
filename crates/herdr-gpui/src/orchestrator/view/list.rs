@@ -31,6 +31,9 @@ const CHECK_PILLS: usize = 3;
 pub(super) enum Empty {
     NoRepositories,
     Loading,
+    SignIn,
+    Failed,
+    Unsupported,
     /// The search matches nothing.
     Search,
     /// The pills or the Issues facets hide everything.
@@ -164,6 +167,13 @@ impl OrchestratorView {
 
     /// Why nothing is listed, which picks what the empty list says.
     pub(super) fn empty(&self) -> Empty {
+        let sources = || self.repos.iter().flat_map(|repo| &repo.snapshot.sources);
+        // An unread source is not evidence of an empty repository, even
+        // while another source is still loading or returned no records.
+        let sign_in = sources().any(|source| matches!(source.state, SyncState::SignIn));
+        let failed = self.repos.iter().any(|repo| repo.snapshot.error.is_some())
+            || sources().any(|source| matches!(source.state, SyncState::Failed(_)));
+        let unsupported = sources().any(|source| matches!(source.state, SyncState::Unsupported));
         let loading = self.repos.iter().any(|repo| {
             let snapshot = &repo.snapshot;
             snapshot.error.is_none()
@@ -183,6 +193,12 @@ impl OrchestratorView {
             };
         if self.repos.is_empty() {
             Empty::NoRepositories
+        } else if sign_in {
+            Empty::SignIn
+        } else if failed {
+            Empty::Failed
+        } else if unsupported {
+            Empty::Unsupported
         } else if loading && !searching {
             Empty::Loading
         } else if searching {
@@ -213,6 +229,27 @@ impl OrchestratorView {
                 ),
             ),
             Empty::Loading => ("icons/refresh.svg", "Loading\u{2026}".to_owned(), None),
+            Empty::SignIn => (
+                "icons/user.svg",
+                "Sign in to load repositories".into(),
+                Some(
+                    "Use the GitHub or GitLab sign-in above to read this repository. No results have been confirmed yet.",
+                ),
+            ),
+            Empty::Failed => (
+                "icons/refresh.svg",
+                "Could not load repositories".into(),
+                Some(
+                    "Check the source status above for the reason, then refresh. This does not mean the repository has no items.",
+                ),
+            ),
+            Empty::Unsupported => (
+                "icons/git-branch.svg",
+                "Repository source unavailable".into(),
+                Some(
+                    "This build cannot read one or more repository sources. See the source status above.",
+                ),
+            ),
             Empty::Search => (
                 "icons/search.svg",
                 format!("No {what} match \u{201c}{query}\u{201d}"),

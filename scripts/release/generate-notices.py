@@ -137,6 +137,11 @@ def main():
         cwd=ROOT, check=True, stdout=subprocess.PIPE,
     )
     report = render(json.loads(result.stdout), lock)
+    go_notices = (ROOT / "native/tailscale/THIRD-PARTY-NOTICES.txt").read_text(encoding="utf-8")
+    go_digest = hashlib.sha256((ROOT / "native/tailscale/go.sum").read_bytes()).hexdigest()
+    if f"go.sum SHA-256: {go_digest}" not in go_notices:
+        raise ValueError("Embedded Tailscale notices are stale; run generate-tailscale-notices.py")
+    report += "\n" + go_notices
     if lock != (ROOT / "Cargo.lock").read_bytes():
         raise ValueError("Cargo.lock changed during generation")
     # No output is created until every package has passed collection.

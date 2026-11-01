@@ -87,7 +87,7 @@ fn the_ssh_form_shows_only_messages_at_each_step_under_en_xa() {
             ),
         ] {
             show(&view, cx, step);
-            assert_translated(&format!("Add Device ({name})"), &recorder.take(), &[]);
+            assert_translated(&format!("Add Device ({name})"), &recorder.take(), &data);
         }
     });
 }

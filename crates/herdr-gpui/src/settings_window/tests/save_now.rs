@@ -44,7 +44,7 @@ fn assert_saved(fixture: &Fixture, cx: &mut VisualTestContext) {
         assert!(view.layout_intent.is_none());
         assert!(!view.flushing);
         assert!(!view.busy());
-        assert_eq!(view.footer_text(), "All changes saved.");
+        assert!(view.footer_text().is_empty());
     });
     draw(cx);
     assert!(cx.debug_bounds("settings-footer-status").is_some());

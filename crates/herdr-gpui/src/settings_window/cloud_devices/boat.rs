@@ -166,6 +166,17 @@ fn setup_running(cx: &App) -> bool {
 }
 
 impl SettingsWindow {
+    pub(super) fn refresh_boat_appearance(&self, cx: &mut Context<Self>) {
+        if let Some(card) = &self.boat_card {
+            super::refresh_inputs(
+                card.fields.iter().chain([&card.key]),
+                &self.config,
+                &self.theme,
+                cx,
+            );
+        }
+    }
+
     pub(super) fn open_boat_card(&mut self, cx: &mut Context<Self>) {
         if self.boat_card.is_none() {
             self.boat_card = Some(BoatCard::new(&self.config, &self.theme, cx));
@@ -408,9 +419,12 @@ impl SettingsWindow {
             None => fl!("settings-cloud-key-store-unavailable"),
         };
         let mut account = self
-            .cloud_card(crate::cloud::name(CloudProvider::Boat).to_owned())
+            .cloud_card_about(
+                crate::cloud::name(CloudProvider::Boat).to_owned(),
+                "cloud-boat-about",
+                fl!("settings-cloud-boat-note"),
+            )
             .debug_selector(|| "cloud-boat-card".into())
-            .child(self.control_note(fl!("settings-cloud-boat-note")))
             .child(div().min_w_0().child(status));
         for (index, (label, _)) in FIELDS.iter().enumerate() {
             account = account.child(
@@ -476,7 +490,6 @@ impl SettingsWindow {
         let mut sandboxes = self
             .cloud_card(fl!("settings-cloud-new-sandbox"))
             .debug_selector(|| "cloud-boat-new".into())
-            .child(self.control_note(fl!("settings-cloud-boat-new-note")))
             .child(
                 self.control_switch(
                     "cloud-boat-install",

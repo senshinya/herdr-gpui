@@ -13,6 +13,7 @@ mod mods;
 mod remote;
 mod settings;
 mod tabs;
+mod tailscale;
 mod work;
 
 use super::{
@@ -248,6 +249,7 @@ fn named_window(request: &Request) -> Option<u64> {
         Request::Chat(call) => call.caller.window,
         Request::Cloud(call) => call.caller.window,
         Request::Remote(call) => call.caller.window,
+        Request::Tailscale(call) => call.caller.window,
         Request::Mod(call) => call.caller.window,
     }
 }
@@ -297,6 +299,7 @@ fn serve(incoming: socket::Incoming, state: &mut State, cx: &mut App) {
         Request::Chat(call) => incoming.respond(chat::serve(call, cx)),
         Request::Cloud(call) => cloud::serve(call, incoming, &mut state.watches, cx),
         Request::Remote(call) => remote::serve(call, incoming, &mut state.watches, cx),
+        Request::Tailscale(call) => tailscale::serve(call, incoming, cx),
         Request::Mod(call) => incoming.respond(mods::serve(call, cx)),
     }
 }

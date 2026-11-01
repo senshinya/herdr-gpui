@@ -154,7 +154,17 @@ fn recovering_waits_while_the_worker_report_cannot_be_read() {
     assert!(!handle.is_disconnected());
     assert_eq!(endpoint.recovery, Some(Trigger::Sleep));
     drop(busy);
-    endpoint.poll(Instant::now());
+    // The worker can reacquire the inbox after our guard is released. As in
+    // the app, poll until the pending recovery can read the worker's report.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while endpoint.recovery.is_some() {
+        endpoint.poll(Instant::now());
+        assert!(
+            Instant::now() < deadline,
+            "recovery stayed pending after the inbox was released"
+        );
+        std::thread::yield_now();
+    }
     assert!(handle.is_disconnected());
     assert_eq!(endpoint.recovery, None);
     std::fs::remove_file(path).unwrap();

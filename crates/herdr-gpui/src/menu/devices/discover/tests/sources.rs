@@ -1,6 +1,6 @@
 use super::*;
 use crate::Error;
-use std::{collections::HashSet, ffi::OsString, path::Path};
+use std::{collections::HashSet, path::Path};
 
 #[test]
 fn bonjour_suggests_the_announced_host_and_its_port() {
@@ -43,100 +43,6 @@ fn bonjour_skips_this_machine_and_unsafe_names() {
         );
     }
     assert!(bonjour::candidate("x._ssh._tcp.local.", "x.local.", 0, &theirs, &local).is_none());
-}
-
-const STATUS: &str = r#"{
-  "BackendState": "Running",
-  "Self": {"HostName": "studio", "DNSName": "studio.tail1.ts.net.", "OS": "macOS", "Online": true},
-  "Peer": {
-    "nodekey:1": {"HostName": "m4max", "DNSName": "m4max.tail1.ts.net.", "OS": "macOS",
-                  "Online": true, "TailscaleIPs": ["100.84.59.116", "fd7a::1"]},
-    "nodekey:2": {"HostName": "localhost", "DNSName": "ipad.tail1.ts.net.", "OS": "iOS",
-                  "Online": true, "TailscaleIPs": ["100.66.16.24"]},
-    "nodekey:3": {"HostName": "zoo", "DNSName": "zoo.tail1.ts.net.", "OS": "linux",
-                  "Online": false, "TailscaleIPs": ["100.107.29.93"]},
-    "nodekey:4": {"HostName": "Beelink Box", "DNSName": "beelink-1.tail1.ts.net.", "OS": "linux",
-                  "Online": true, "TailscaleIPs": ["100.104.39.61"], "Unknown": [1, 2]},
-    "nodekey:5": {"HostName": "win", "DNSName": "win.tail1.ts.net.", "OS": "windows",
-                  "Online": true, "TailscaleIPs": ["100.1.1.1"]}
-  }
-}"#;
-
-#[test]
-fn tailscale_suggests_online_peers_that_can_serve_ssh() {
-    let peers = tailscale::parse(STATUS.as_bytes()).unwrap();
-    let found: Vec<(&str, &str)> = peers
-        .iter()
-        .map(|peer| (peer.name.as_str(), peer.target.as_str()))
-        .collect();
-    assert_eq!(
-        found,
-        [
-            ("beelink-1", "beelink-1.tail1.ts.net"),
-            ("m4max", "m4max.tail1.ts.net"),
-        ]
-    );
-    assert!(peers[1].keys.contains(&"100.84.59.116".to_owned()));
-    assert!(peers[1].keys.contains(&"~m4max".to_owned()));
-}
-
-#[test]
-fn tailscale_falls_back_to_an_address_without_magic_dns() {
-    let json = r#"{"Peer": {"k": {"HostName": "box", "DNSName": "", "OS": "linux",
-                   "Online": true, "TailscaleIPs": ["100.64.0.5"]}}}"#;
-    let peers = tailscale::parse(json.as_bytes()).unwrap();
-    assert_eq!(peers[0].name, "box");
-    assert_eq!(peers[0].target, "100.64.0.5");
-}
-
-#[test]
-fn tailscale_status_without_peers_or_with_bad_json() {
-    assert!(tailscale::parse(br#"{"Peer": null}"#).unwrap().is_empty());
-    assert!(tailscale::parse(b"{}").unwrap().is_empty());
-    assert!(matches!(
-        tailscale::parse(b"Warning: not json"),
-        Err(Error::Devices(crate::menu::devices::Error::TailscaleJson(
-            _
-        )))
-    ));
-}
-
-#[test]
-fn tailscale_switched_off_suggests_nothing() {
-    for state in ["Stopped", "NeedsLogin", "NoState", "Starting"] {
-        let json = STATUS.replace(
-            r#""BackendState": "Running""#,
-            &format!(r#""BackendState": "{state}""#),
-        );
-        assert!(
-            tailscale::parse(json.as_bytes()).unwrap().is_empty(),
-            "{state}"
-        );
-    }
-}
-
-#[test]
-fn tailscale_is_found_on_path_before_install_locations() {
-    // A real absolute directory, so the search reads the same on every system.
-    let custom = tempfile::tempdir().unwrap();
-    let on_path = custom.path().join("tailscale");
-    let path = std::env::join_paths([Path::new("relative"), custom.path()]).unwrap();
-    let found = tailscale::executable(&path, |candidate| {
-        candidate == on_path || candidate == Path::new("/usr/bin/tailscale")
-    });
-    assert_eq!(found.as_deref(), Some(on_path.as_path()));
-    assert!(tailscale::executable(&OsString::new(), |_| false).is_none());
-}
-
-/// The install locations are Unix paths: the Add Device dialog that uses
-/// them is not offered on Windows, which adds WSL distributions instead.
-#[cfg(unix)]
-#[test]
-fn tailscale_falls_back_to_its_install_locations() {
-    let found = tailscale::executable(&OsString::new(), |candidate| {
-        candidate == Path::new("/usr/bin/tailscale")
-    });
-    assert_eq!(found.as_deref(), Some(Path::new("/usr/bin/tailscale")));
 }
 
 /// A loader over in-memory files. Paths are compared by component, so the

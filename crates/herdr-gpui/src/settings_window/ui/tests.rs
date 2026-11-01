@@ -4,6 +4,8 @@ use crate::config::Theme;
 use core::prelude::v1::test;
 use std::{cell::Cell, rc::Rc};
 
+mod contextual_help;
+
 struct Harness {
     picked: Rc<Cell<Option<u8>>>,
     element_picked: Rc<Cell<Option<u8>>>,
@@ -79,7 +81,7 @@ fn rows_render_their_parts_and_segments_report_picks(cx: &mut TestAppContext) {
     assert!(row.size.height >= px(ROW_HEIGHT), "{row:?}");
     assert!(cx.debug_bounds("row-a-title").is_some());
     assert!(cx.debug_bounds("row-a-description").is_some());
-    assert!(cx.debug_bounds("row-a-tag").is_some());
+    assert!(cx.debug_bounds("row-a-tag").is_none());
     assert!(cx.debug_bounds("toggle-a").is_some());
     assert!(
         cx.debug_bounds("row-b-reason").is_some(),

@@ -63,8 +63,8 @@ impl HostMenu {
     /// How removing this device deletes its machine, if its provider can.
     pub(super) fn deletion(&self) -> Option<Deletion> {
         match &self.saved {
-            Saved::Cloud { provider, .. } => crate::cloud::deletion(*provider),
-            Saved::Ssh { .. } => None,
+            Some(Saved::Cloud { provider, .. }) => crate::cloud::deletion(*provider),
+            Some(Saved::Ssh { .. }) | None => None,
         }
     }
 
@@ -78,8 +78,8 @@ impl HostMenu {
 
     fn machine_noun(&self) -> Option<&'static str> {
         match &self.saved {
-            Saved::Cloud { id, .. } => Some((self.deletion()?.noun)(id)),
-            Saved::Ssh { .. } => None,
+            Some(Saved::Cloud { id, .. }) => Some((self.deletion()?.noun)(id)),
+            Some(Saved::Ssh { .. }) | None => None,
         }
     }
 }
@@ -137,7 +137,7 @@ fn checkout_line(checkout: &Checkout) -> String {
 
 /// What deleting the device does, or `None` when it cannot be deleted.
 pub(super) fn removal_note(host: &HostMenu) -> Option<String> {
-    let Saved::Cloud { provider, .. } = &host.saved else {
+    let Some(Saved::Cloud { provider, .. }) = &host.saved else {
         return None;
     };
     let deletion = host.deletion()?;

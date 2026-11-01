@@ -228,6 +228,7 @@ impl HerdrWindow {
                             theme: this.theme.clone(),
                             error: None,
                         });
+                        crate::tailnet::refresh(&config.tailscale);
                         this.config = config;
                         this.sound.set_volume(this.config.sound.volume);
                         this.gui_config_diagnostic.sync(this.config.diagnostic().as_deref());
@@ -581,12 +582,6 @@ impl HerdrWindow {
                     .child(fl!("menu-settings-no-match")),
             );
         }
-        body = body.child(
-            div()
-                .py(px(14.))
-                .text_color(rgb(theme.subtext()))
-                .child(fl!("menu-settings-note")),
-        );
         div()
             .flex()
             .flex_col()
@@ -610,20 +605,12 @@ impl HerdrWindow {
                             .bg(accent),
                     )
                     .child(
-                        div()
-                            .flex_1()
-                            .min_w_0()
-                            .child(
-                                div()
-                                    .text_size(px(font.size * 1.35))
-                                    .font_weight(FontWeight::SEMIBOLD)
-                                    .child(fl!("menu-settings-title")),
-                            )
-                            .child(
-                                div()
-                                    .text_color(rgb(theme.muted))
-                                    .child(fl!("menu-settings-subtitle")),
-                            ),
+                        div().flex_1().min_w_0().child(
+                            div()
+                                .text_size(px(font.size * 1.35))
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .child(fl!("menu-settings-title")),
+                        ),
                     )
                     .child(
                         div()

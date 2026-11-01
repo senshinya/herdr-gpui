@@ -157,6 +157,17 @@ fn configured_secret(config: &CoderConfig) -> Option<String> {
 }
 
 impl SettingsWindow {
+    pub(super) fn refresh_coder_appearance(&self, cx: &mut Context<Self>) {
+        if let Some(card) = &self.coder_card {
+            super::refresh_inputs(
+                card.fields.iter().chain([&card.secret]),
+                &self.config,
+                &self.theme,
+                cx,
+            );
+        }
+    }
+
     /// Build the section on first view, then refresh what it reads from disk
     /// and the deployment.
     pub(super) fn open_coder_card(&mut self, cx: &mut Context<Self>) {
@@ -362,9 +373,12 @@ impl SettingsWindow {
             }
         });
         let mut card = self
-            .cloud_card(crate::cloud::name(crate::cloud::CloudProvider::Coder).to_owned())
+            .cloud_card_about(
+                crate::cloud::name(crate::cloud::CloudProvider::Coder).to_owned(),
+                "cloud-coder-about",
+                fl!("settings-cloud-coder-note"),
+            )
             .debug_selector(|| "cloud-coder-card".into())
-            .child(self.control_note(fl!("settings-cloud-coder-note")))
             .child(
                 div()
                     .row()

@@ -9,5 +9,5 @@ fn a_used_up_quota_says_it_ran_out() {
         assert_eq!(pace.describe(used), "Ran out");
     }
     let pace = window(99.).pace(now).unwrap();
-    assert!(pace.describe(99.).contains("in deficit"));
+    assert!(pace.describe(99.).contains("points above expected usage"));
 }

@@ -30,7 +30,7 @@ impl HerdrWindow {
         form.error = None;
         let background = cx
             .background_executor()
-            .spawn(async move { herdr_client::scan_host_key(request.target()) });
+            .spawn(async move { herdr_client::scan_host_key(request.connection_target()) });
         form.task = Some(cx.spawn(async move |this, cx| {
             let result = background.await;
             let _ = this.update(cx, |this, cx| this.host_key_fetched(result, cx));
@@ -87,7 +87,12 @@ impl HerdrWindow {
         );
         self.set_device_error(Some(error));
         if let Some(form) = &mut self.menu.device_setup {
-            form.step = Step::Confirm(request, Offer::Terminal);
+            if request.is_tailnet() {
+                form.step = Step::Form;
+                form.claim = None;
+            } else {
+                form.step = Step::Confirm(request, Offer::Terminal);
+            }
         }
         cx.notify();
     }

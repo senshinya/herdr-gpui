@@ -307,6 +307,17 @@ fn texts(values: &AzureFields) -> [&str; 9] {
 }
 
 impl SettingsWindow {
+    pub(super) fn refresh_azure_appearance(&self, cx: &mut Context<Self>) {
+        if let Some(card) = &self.azure_card {
+            super::refresh_inputs(
+                card.fields.iter().chain([&card.client_id, &card.secret]),
+                &self.config,
+                &self.theme,
+                cx,
+            );
+        }
+    }
+
     pub(super) fn open_azure_card(&mut self, cx: &mut Context<Self>) {
         if self.azure_card.is_none() {
             self.azure_card = Some(AzureCard::new(&self.config, &self.theme, cx));
@@ -594,9 +605,12 @@ impl SettingsWindow {
             ready && configured && !card.refreshing && crate::cloud::unavailable().is_none();
 
         let account = self
-            .cloud_card(crate::cloud::name(CloudProvider::Azure).to_owned())
+            .cloud_card_about(
+                crate::cloud::name(CloudProvider::Azure).to_owned(),
+                "cloud-azure-about",
+                fl!("settings-cloud-azure-note"),
+            )
             .debug_selector(|| "cloud-azure-card".into())
-            .child(self.control_note(fl!("settings-cloud-azure-note")))
             .child(div().min_w_0().child(status))
             .children(
                 FIELDS

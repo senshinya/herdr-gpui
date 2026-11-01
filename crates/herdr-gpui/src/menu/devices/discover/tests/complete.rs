@@ -20,7 +20,7 @@ fn targets(rows: &[&Suggestion]) -> Vec<String> {
 #[test]
 fn an_empty_field_or_a_bare_user_lists_every_row() {
     let list = list(&[
-        (Source::Tailscale, "prox1", "prox1.tail1.ts.net"),
+        (Source::SshConfig, "prox1", "prox1.tail1.ts.net"),
         (Source::SshConfig, "orb", "orb"),
     ]);
     for text in ["", "  ", "root@"] {
@@ -34,13 +34,13 @@ fn an_empty_field_or_a_bare_user_lists_every_row() {
 #[test]
 fn prefix_matches_come_before_contained_ones() {
     let list = list(&[
-        (Source::Tailscale, "samba", "samba.tail1.ts.net"),
+        (Source::SshConfig, "samba", "samba.tail1.ts.net"),
         (
-            Source::Tailscale,
+            Source::SshConfig,
             "tailscale-lisbon",
             "tailscale-lisbon.tail1.ts.net",
         ),
-        (Source::Tailscale, "prox1", "prox1.tail1.ts.net"),
+        (Source::SshConfig, "prox1", "prox1.tail1.ts.net"),
     ]);
     // Every target contains `tail`, but only one starts with it.
     let rows = matching(&list, &Query::new("TAIL"));
@@ -71,7 +71,7 @@ fn names_and_url_targets_match_too() {
 #[test]
 fn a_typed_user_is_kept_in_the_fill_and_ghost() {
     let list = list(&[
-        (Source::Tailscale, "samba", "samba.tail1.ts.net"),
+        (Source::SshConfig, "samba", "samba.tail1.ts.net"),
         (Source::Bonjour, "nas", "ssh://nas.local:2222"),
         (Source::SshConfig, "box", "admin@box"),
     ]);
@@ -106,8 +106,17 @@ fn the_ghost_only_extends_a_typed_prefix() {
 }
 
 fn type_target(view: &Entity<HerdrWindow>, cx: &mut VisualTestContext, text: &str) {
-    cx.update(|_, cx| {
-        let target = view.read(cx).menu.device_setup.as_ref().unwrap().fields[0].clone();
+    cx.update(|window, cx| {
+        view.update(cx, |view, cx| view.show_device_picker(window, cx));
+        let target = view
+            .read(cx)
+            .menu
+            .device_setup
+            .as_ref()
+            .unwrap()
+            .picker
+            .input()
+            .clone();
         target.update(cx, |field, cx| field.set_text_selected(text, cx));
     });
     cx.run_until_parked();
@@ -117,7 +126,11 @@ fn rows(view: &Entity<HerdrWindow>, cx: &mut VisualTestContext) -> (Vec<String>,
     cx.update(|_, cx| {
         let view = view.read(cx);
         let setup = view.menu.device_setup.as_ref().unwrap();
-        let text = setup.fields[0].read(cx).text().to_owned();
+        let text = if setup.picker.choosing() {
+            setup.picker.query(cx)
+        } else {
+            setup.fields[0].read(cx).text().to_owned()
+        };
         let completion = view.device_completion(setup, &text);
         (completion.fills, completion.highlight)
     })
@@ -134,7 +147,7 @@ fn focused_field(view: &Entity<HerdrWindow>, cx: &mut VisualTestContext) -> Opti
 }
 
 #[gpui::test]
-fn typing_filters_the_list_and_tab_completes(cx: &mut gpui::TestAppContext) {
+fn typing_filters_the_picker_and_enter_opens_connection_details(cx: &mut gpui::TestAppContext) {
     let (view, cx) = open(cx, report);
     settle(cx);
     // Nothing typed: every unsaved row, none chosen, so Tab moves on.
@@ -155,7 +168,7 @@ fn typing_filters_the_list_and_tab_completes(cx: &mut gpui::TestAppContext) {
     assert!(cx.debug_bounds("device-suggestion-0").is_some());
     assert!(cx.debug_bounds("device-suggestion-1").is_none());
 
-    cx.simulate_keystrokes("tab");
+    cx.simulate_keystrokes("enter");
     assert_eq!(
         fields(&view, cx),
         ("me@m4max.tail1.ts.net".into(), "m4max".into())
@@ -229,26 +242,38 @@ fn key(view: &Entity<HerdrWindow>, cx: &mut VisualTestContext, key: &str) -> boo
 fn an_announced_name_never_replaces_a_typed_host(cx: &mut gpui::TestAppContext) {
     let (view, cx) = open(cx, spoof);
     settle(cx);
-    type_target(&view, cx, "prod.example.com");
-    // The row shows, since it matches, but is not highlighted or drawn
-    // after the caret, and neither Tab nor Enter puts it in the field.
-    assert_eq!(rows(&view, cx), (vec!["evil.local".into()], None));
+    let manual = cx.debug_bounds("device-picker-manual").unwrap().center();
+    cx.simulate_click(manual, Default::default());
+    cx.update(|_, cx| {
+        let target = view.read(cx).menu.device_setup.as_ref().unwrap().fields[0].clone();
+        target.update(cx, |field, cx| {
+            field.set_text_selected("prod.example.com", cx)
+        });
+    });
     assert!(!key(&view, cx, "tab"));
     assert!(!key(&view, cx, "enter"));
+    assert!(!key(&view, cx, "down"));
     assert_eq!(fields(&view, cx).0, "prod.example.com");
-    // Only an explicit pick fills it.
+    type_target(&view, cx, "prod.example.com");
+    assert_eq!(rows(&view, cx), (vec!["evil.local".into()], None));
+    assert!(!key(&view, cx, "enter"));
     assert!(key(&view, cx, "down"));
     assert!(key(&view, cx, "enter"));
     assert_eq!(fields(&view, cx).0, "evil.local");
 }
 
 #[gpui::test]
-fn enter_sends_what_is_typed_even_with_a_completion_shown(cx: &mut gpui::TestAppContext) {
+fn manual_entry_never_accepts_hidden_discovery_completions(cx: &mut gpui::TestAppContext) {
     let (view, cx) = open(cx, report);
     settle(cx);
-    type_target(&view, cx, "m4");
-    assert_eq!(rows(&view, cx).1, Some(0));
-    assert!(!key(&view, cx, "enter"), "left to submit the form");
+    let manual = cx.debug_bounds("device-picker-manual").unwrap().center();
+    cx.simulate_click(manual, Default::default());
+    cx.update(|_, cx| {
+        let target = view.read(cx).menu.device_setup.as_ref().unwrap().fields[0].clone();
+        target.update(cx, |field, cx| field.set_text_selected("m4", cx));
+    });
+    assert!(!key(&view, cx, "enter"));
+    assert!(!key(&view, cx, "tab"));
     assert_eq!(fields(&view, cx).0, "m4");
 }
 
@@ -334,7 +359,7 @@ fn an_arrow_choice_survives_another_source_changing_its_target(cx: &mut gpui::Te
             merge(
                 &mut discovery.suggestions,
                 candidate(
-                    Source::Tailscale,
+                    Source::SshConfig,
                     "nas",
                     "nas.tail1.ts.net",
                     &["nas.tail1.ts.net"],

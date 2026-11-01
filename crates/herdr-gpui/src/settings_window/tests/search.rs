@@ -57,6 +57,7 @@ fn every_catalog_id_is_unique_and_belongs_to_its_section() {
             Section::Plugins => "plugins-",
             #[cfg(feature = "cloud")]
             Section::CloudDevices => "cloud-",
+            Section::Tailscale => "tailnet-",
             Section::RemoteControl => "remote-",
             Section::Configuration => "config-",
         };
@@ -69,7 +70,12 @@ fn every_catalog_id_is_a_rendered_row(cx: &mut TestAppContext) {
     let (view, cx) = cx.add_window_view(skill_fixture);
     cx.simulate_resize(size(px(960.), px(3000.)));
     for section in Section::ALL.iter().copied() {
-        view.update(cx, |view, _| view.section = section);
+        view.update(cx, |view, _| {
+            view.section = section;
+            if section == Section::Tailscale {
+                view.reveal_tailnet_advanced();
+            }
+        });
         cx.update(|window, cx| crate::sidebar::layout_tests::full_draw(window, cx).clear(cx));
         for entry in catalog::CATALOG.iter().filter(|e| e.section == section) {
             // A row the fixture's state does not render, such as the theme

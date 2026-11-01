@@ -5,6 +5,20 @@ use crate::i18n::fl;
 use gpui::{prelude::*, *};
 use std::path::PathBuf;
 
+pub(crate) fn open(source: WeakEntity<crate::HerdrWindow>, cx: &mut App) {
+    crate::settings_window::open(source, cx);
+    cx.defer(|cx| {
+        if let Some(handle) = cx
+            .default_global::<crate::settings_window::SettingsWindowHandle>()
+            .window
+        {
+            let _ = handle.update(cx, |view, window, cx| {
+                view.select_section(super::super::Section::Configuration, window, cx);
+            });
+        }
+    });
+}
+
 /// Reveals `path` in the file manager, or opens it in the default editor.
 /// Spawned on the background executor: waiting on the helper never blocks the UI.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -68,7 +82,7 @@ impl SettingsWindow {
             )))
             .child(
                 ui::row(theme, "config-reload", fl!("settings-config-reload"))
-                    .description(fl!("settings-config-reload-description"))
+                    .help(fl!("settings-config-reload-description"))
                     .control(
                         ui::button(theme, "config-reload-button", fl!("settings-reload"), true)
                             .on_click(cx.listener(|this, _, _, cx| this.reload(cx))),

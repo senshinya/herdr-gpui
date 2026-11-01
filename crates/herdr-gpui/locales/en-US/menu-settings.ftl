@@ -2,7 +2,6 @@
 
 menu-settings-load-failed = Load GUI config: { $error }
 menu-settings-title = Keyboard Shortcuts
-menu-settings-subtitle = View and edit shortcuts
 menu-settings-close = Close
 menu-settings-search = Search shortcuts...
 menu-settings-count = { $count } of { $total } shortcuts
@@ -18,7 +17,6 @@ menu-settings-no-shortcut = No shortcut assigned
 menu-settings-edit = Edit
 menu-settings-no-match = No matching shortcuts. Try an action name or key combination.
 # "[keys]" is a section of Herdr's config file; keep it as it is.
-menu-settings-note = Includes Herdr's [keys] prefix chords and the connected daemon's plugin and custom commands. A binding that cannot run says why. Terminal applications keep their own shortcuts.
 # Why a plugin or custom command's binding does not run, under its keys.
 menu-settings-shadowed = Used by a Herdr or GUI shortcut
 menu-settings-taken = Used by an earlier command

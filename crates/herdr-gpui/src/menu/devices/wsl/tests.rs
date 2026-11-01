@@ -134,12 +134,15 @@ fn nothing_is_submitted_without_a_distribution(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn a_wsl_device_menu_only_offers_removal(cx: &mut TestAppContext) {
+fn a_wsl_device_menu_opens_its_removal_confirmation(cx: &mut TestAppContext) {
     let (view, cx) = cx.add_window_view(fixture_window);
     view.update_in(cx, |view, window, cx| {
         view.endpoints[0].connection.target = ConnectTarget::Local;
         view.reconcile_catalog(Vec::new(), vec![wsl("Ubuntu")], cx);
         view.open_host_menu("wsl:Ubuntu", Point::default(), window, cx);
+        assert_eq!(view.menu.page, Some(Page::Host));
+        view.host_menu_key(&key("up"), window, cx);
+        view.host_menu_key(&key("enter"), window, cx);
         assert_eq!(view.menu.page, Some(Page::RemoveWsl));
         assert_eq!(view.menu.wsl_remove.as_deref(), Some("Ubuntu"));
         assert!(view.menu.host.is_none());

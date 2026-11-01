@@ -40,8 +40,6 @@ fn every_devices_variant_has_a_message() {
             detail: detail(),
         },
         Error::SetupTimeout,
-        Error::TailscaleJson(serde_json::from_str::<u8>("x").unwrap_err()),
-        Error::TailscaleTimeout,
         Error::TerminalSetupUnavailable,
     ]);
 }

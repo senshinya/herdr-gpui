@@ -53,6 +53,7 @@ mod root;
 mod setup_relay;
 mod sound;
 mod system_load;
+mod tailnet;
 #[cfg(test)]
 pub(crate) mod tests;
 mod updater;

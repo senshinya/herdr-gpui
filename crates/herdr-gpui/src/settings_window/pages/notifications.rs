@@ -42,7 +42,7 @@ impl SettingsWindow {
             .child(
                 self.gate_shared(
                     ui::row(theme, "notif-delivery", fl!("settings-notif-delivery"))
-                        .description(fl!("settings-notif-delivery-description")),
+                        .help(fl!("settings-notif-delivery-description")),
                 )
                 .control(ui::segmented(
                     theme,
@@ -75,7 +75,7 @@ impl SettingsWindow {
             .child(
                 ui::row(theme, "notif-finished", fl!("settings-notif-finished"))
                     .tag(ui::Source::HerdrUi)
-                    .description(fl!("settings-notifications-finished-description"))
+                    .help(fl!("settings-notifications-finished-description"))
                     .switch(self.preference_toggle(
                         "notif-finished-toggle",
                         finished,
@@ -102,7 +102,7 @@ impl SettingsWindow {
             .child(self.delay_row(cx))
             .child(
                 ui::row(theme, "notif-position", fl!("settings-notif-position"))
-                    .description(fl!("settings-notifications-position-description"))
+                    .help(fl!("settings-notifications-position-description"))
                     .control(self.override_dropdown(
                         DropdownField::ToastPosition,
                         &base_position,
@@ -120,7 +120,7 @@ impl SettingsWindow {
                 self.gate_shared(
                     ui::row(theme, "notif-sound", fl!("settings-notif-sound"))
                         .tag(ui::Source::Herdr)
-                        .description(if source_alive {
+                        .help(if source_alive {
                             fl!("settings-notifications-sound-description")
                         } else {
                             fl!("settings-notifications-sound-description-no-window")
@@ -162,7 +162,7 @@ impl SettingsWindow {
         let value = self.config.notifications.delay_seconds as f32;
         let view = cx.entity().downgrade();
         ui::row(&self.theme, "notif-delay", fl!("settings-notif-delay"))
-            .description(fl!("settings-notifications-delay-description"))
+            .help(fl!("settings-notifications-delay-description"))
             .control(ui::number(
                 &self.theme,
                 ui::Number {
@@ -210,7 +210,7 @@ impl SettingsWindow {
         let view = cx.entity().downgrade();
         ui::row(&self.theme, "notif-volume", fl!("settings-notif-volume"))
             .tag(ui::Source::HerdrUi)
-            .description(fl!("settings-notif-volume-description"))
+            .help(fl!("settings-notif-volume-description"))
             .control(ui::number(
                 &self.theme,
                 ui::Number {

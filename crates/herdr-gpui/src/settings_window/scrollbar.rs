@@ -22,6 +22,7 @@ const HELD_ALPHA: u32 = 0xc0;
 pub(super) enum Pane {
     Sections,
     Body,
+    TailnetDevices,
 }
 
 impl Pane {
@@ -29,6 +30,7 @@ impl Pane {
         match self {
             Self::Sections => "settings-sections-thumb",
             Self::Body => "settings-body-thumb",
+            Self::TailnetDevices => "tailnet-settings-thumb",
         }
     }
 }
@@ -51,15 +53,16 @@ fn thumb(handle: &ScrollHandle) -> Option<(Thumb, Bounds<Pixels>, f32)> {
 }
 
 impl SettingsWindow {
-    fn pane_scroll(&self, pane: Pane) -> &ScrollHandle {
+    fn pane_scroll(&self, pane: Pane) -> ScrollHandle {
         match pane {
-            Pane::Sections => &self.navigation_scroll,
-            Pane::Body => &self.body_scroll,
+            Pane::Sections => self.navigation_scroll.clone(),
+            Pane::Body => self.body_scroll.clone(),
+            Pane::TailnetDevices => self.tailnet_peer_scroll(),
         }
     }
 
     fn grab_thumb(&mut self, pane: Pane, y: Pixels) {
-        if let Some((thumb, bounds, _)) = thumb(self.pane_scroll(pane)) {
+        if let Some((thumb, bounds, _)) = thumb(&self.pane_scroll(pane)) {
             self.thumb_grab = f32::from(y - bounds.top()) - thumb.left;
         }
     }
@@ -67,7 +70,7 @@ impl SettingsWindow {
     /// Moves `pane`'s thumb with the pointer at `y`; whether it scrolled.
     pub(super) fn drag_thumb(&mut self, pane: Pane, y: Pixels) -> bool {
         let handle = self.pane_scroll(pane);
-        let Some((thumb, bounds, max)) = thumb(handle) else {
+        let Some((thumb, bounds, max)) = thumb(&handle) else {
             return false;
         };
         let top = f32::from(y - bounds.top()) - self.thumb_grab;
@@ -91,7 +94,7 @@ impl SettingsWindow {
     ) -> Stateful<Div> {
         let muted = self.theme.muted;
         let color = move |alpha: u32| rgba((muted << 8) | alpha);
-        let thumb = thumb(self.pane_scroll(pane)).map(|(thumb, _, _)| {
+        let thumb = thumb(&self.pane_scroll(pane)).map(|(thumb, _, _)| {
             div()
                 .id(pane.selector())
                 .debug_selector(move || pane.selector().into())
@@ -119,6 +122,7 @@ impl SettingsWindow {
             .id(match pane {
                 Pane::Sections => "settings-sections-area",
                 Pane::Body => "settings-body-area",
+                Pane::TailnetDevices => "tailnet-settings-list-area",
             })
             .relative()
             .flex_1()

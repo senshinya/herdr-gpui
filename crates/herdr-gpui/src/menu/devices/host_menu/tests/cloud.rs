@@ -63,10 +63,10 @@ fn right_clicking_a_cloud_device_offers_rename_settings_setup_and_removal(cx: &m
         assert_eq!(view.menu.page, Some(Page::Host));
         assert_eq!(
             host(view).saved,
-            Saved::Cloud {
+            Some(Saved::Cloud {
                 provider: provider(),
                 id: "w1".into()
-            }
+            })
         );
         // Named by the machine, which an empty new name falls back to.
         assert_eq!(host(view).target, "herdr-tidy-lark-aa");

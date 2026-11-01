@@ -8,7 +8,7 @@ browser-notes-describe = Describe the change…
 browser-notes-region = Region
 # A note on the whole page rather than on a part of it.
 browser-notes-page = Note on page
-browser-notes-empty = Click an element, select text, or Shift-drag a region in the page, then describe the change.
+browser-notes-empty = Select text or an element to add a note.
 browser-notes-capturing = Taking a screenshot…
 browser-notes-add = Add note
 browser-notes-save = Save note
@@ -38,3 +38,4 @@ browser-notes-copied = Notes copied
 browser-notes-pending = The previous notes are still pending delivery
 browser-notes-delivered = The agent already has those notes
 browser-notes-withdrawn = Notes withdrawn
+browser-notes-empty-region = Drag a region to add a note.

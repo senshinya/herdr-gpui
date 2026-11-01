@@ -2,14 +2,7 @@
 # activity over the last two hours, and the sidebar's device tree search.
 # Device, host, and agent names are shown as they are.
 
-devices-overview-title = Devices overview
-devices-overview-summary = { $devices ->
-        [one] { $devices } device
-       *[other] { $devices } devices
-    } · { $agents ->
-        [one] { $agents } agent
-       *[other] { $agents } agents
-    }
+devices-overview-title = Devices
 devices-overview-add-device = Add Device
 devices-overview-search = Search devices, agents, workspaces
 devices-overview-tree-search = Search devices and agents
@@ -20,11 +13,8 @@ devices-overview-too-many-tabs = Too many tabs are open
 devices-overview-working = Working
 devices-overview-working-of = of { $total } agents
 devices-overview-blocked = Blocked
-devices-overview-waiting = waiting for you
 devices-overview-idle-or-done = Idle or done
-devices-overview-ready = ready for work
 devices-overview-online = Devices online
-devices-overview-all-reachable = all reachable
 devices-overview-not-connected = { $count } not connected
 
 # The legend of agent states.
@@ -50,7 +40,6 @@ devices-overview-lane-offline = offline
 devices-overview-lane-disabled = disabled
 
 # The device table.
-devices-overview-devices = Devices
 devices-overview-column-device = Device
 devices-overview-column-agents = Agents
 devices-overview-column-cpu = CPU
@@ -74,3 +63,4 @@ devices-overview-this-machine = this machine
 devices-overview-session = session { $name }
 devices-overview-ssh = ssh { $target }
 devices-overview-wsl = WSL · { $distro }
+devices-overview-results = Results

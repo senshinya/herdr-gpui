@@ -12,6 +12,7 @@ mod mods;
 mod remote;
 mod settings;
 mod tabs;
+mod tailscale;
 mod work;
 
 use super::CliError;
@@ -33,6 +34,7 @@ pub use settings::{
 };
 use std::ffi::OsString;
 pub use tabs::{CodeCommand, FileAt, Items, OrchestratorCommand, TabCommand};
+pub use tailscale::TailscaleCommand;
 pub use work::{CheckpointCommand, FanOut, NotesCommand, WaitFor};
 
 /// What to do, and how the answer is printed.
@@ -95,6 +97,7 @@ pub enum ControlCommand {
     Security(SecurityCommand),
     Automation(AutomationCommand),
     Remote(RemoteCommand),
+    Tailscale(TailscaleCommand),
     /// The mods the window runs; `check` runs here.
     Mod(ModCommand),
     Search {
@@ -240,6 +243,10 @@ pub const FAMILIES: &[(&str, &str)] = &[
     ("logs", "Print or locate the app's log"),
     ("update", "Check for an app update; never installs"),
     ("diagnostics", "Write a redacted bundle for a bug report"),
+    (
+        "tailscale",
+        "Embedded Tailnet status, peers, and connection settings",
+    ),
     ("integrations", "Agent integrations and the agent skill"),
 ];
 
@@ -375,6 +382,7 @@ fn command(family: &'static str, args: &mut Args) -> Result<ControlCommand, CliE
         "security" => ControlCommand::Security(hosts::security(args)?),
         "automation" => ControlCommand::Automation(hosts::automation(args)?),
         "remote" => ControlCommand::Remote(remote::remote(args)?),
+        "tailscale" => ControlCommand::Tailscale(tailscale::tailscale(args)?),
         "mod" => ControlCommand::Mod(mods::command(args)?),
         "search" => {
             let files = match args.verb().as_ref().and_then(|verb| verb.to_str()) {

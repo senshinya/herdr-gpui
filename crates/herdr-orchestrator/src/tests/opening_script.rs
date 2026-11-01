@@ -30,6 +30,7 @@ fn open_within(
         .env_clear()
         .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
         .env("HOME", dir)
+        .env("SHELL", bin.join("login-shell"))
         .env("GIT_CONFIG_NOSYSTEM", "1")
         .env("GIT_CONFIG_GLOBAL", dir.join("gitconfig"));
     let limits = ScriptLimits {
@@ -62,6 +63,7 @@ fn printed(dir: &Path, checkout: &Path, bin: &Path) -> Vec<u8> {
         .env_clear()
         .env("PATH", format!("{}:/usr/bin:/bin", bin.display()))
         .env("HOME", dir)
+        .env("SHELL", bin.join("login-shell"))
         .env("GIT_CONFIG_NOSYSTEM", "1")
         .env("GIT_CONFIG_GLOBAL", dir.join("gitconfig"));
     let limits = ScriptLimits {
@@ -118,6 +120,13 @@ fn fixture() -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
     std::fs::create_dir_all(&checkout).unwrap();
     let bin = dir.path().join("bin");
     std::fs::create_dir(&bin).unwrap();
+    // A system login shell would reintroduce Homebrew tools through /etc/profile.
+    test_executable::write(
+        bin.join("login-shell"),
+        "#!/bin/sh\nprintf %s \"$PATH\"\n",
+        0o755,
+    )
+    .unwrap();
     test_executable::write(bin.join("claude"), "#!/bin/sh\n", 0o755).unwrap();
     (dir, checkout, bin)
 }

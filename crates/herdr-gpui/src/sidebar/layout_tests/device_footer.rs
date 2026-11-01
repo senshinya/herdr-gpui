@@ -152,6 +152,8 @@ fn add_device_form_keeps_input_local_and_validates_before_launch(cx: &mut gpui::
         assert_eq!(view.read(cx).menu.page, Some(crate::menu::Page::AddDevice));
         full_draw(window, cx).clear(cx);
     });
+    let manual = cx.debug_bounds("device-picker-manual").unwrap().center();
+    cx.simulate_click(manual, Modifiers::default());
     for (width, height) in [(320., 300.), (800., 600.)] {
         cx.simulate_resize(size(px(width), px(height)));
         cx.update(|window, cx| full_draw(window, cx).clear(cx));

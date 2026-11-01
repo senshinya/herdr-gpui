@@ -345,6 +345,11 @@ impl SettingsWindow {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if self.dropdown.is_none() && self.tailnet_devices_key(event, window, cx) {
+            cx.stop_propagation();
+            window.prevent_default();
+            return;
+        }
         let key = event.keystroke.key.as_str();
         if let Some(open) = &mut self.dropdown {
             if !matches!(key, "up" | "down" | "enter" | "escape") {

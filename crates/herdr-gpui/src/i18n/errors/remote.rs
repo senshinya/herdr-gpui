@@ -64,6 +64,7 @@ impl Localize for Error {
             Self::Provider(error) => error.localize(),
             #[cfg(feature = "cloud")]
             Self::SandboxImage(error) => error.localize(),
+            Self::Tailscale(error) => error.localize(),
             Self::Teleport(error) => error.localize(),
             // keep-sorted end
         }

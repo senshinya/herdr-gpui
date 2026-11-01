@@ -255,6 +255,8 @@ pub(super) fn device_label(label: &str, target: &str) -> Result<String> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct Request {
+    tailnet_peer: Option<crate::tailnet::Selection>,
+    tailnet_binding: Option<herdr_client::tailnet::Binding>,
     target: String,
     label: String,
     session: String,
@@ -294,6 +296,8 @@ impl Request {
         }
         Ok(Self {
             target: target.into(),
+            tailnet_peer: None,
+            tailnet_binding: None,
             label,
             session: session.into(),
             host_keys: HostKeys::Verify,
@@ -305,7 +309,30 @@ impl Request {
     }
 
     pub(super) fn target(&self) -> &str {
+        self.tailnet_binding
+            .as_ref()
+            .map_or(self.target.as_str(), |b| b.original_target.as_str())
+    }
+
+    pub(super) fn connection_target(&self) -> &str {
         &self.target
+    }
+    pub(super) fn is_tailnet(&self) -> bool {
+        self.tailnet_peer.is_some()
+    }
+    pub(super) fn with_tailnet(mut self, peer: Option<crate::tailnet::Selection>) -> Self {
+        self.tailnet_peer = peer;
+        self
+    }
+    pub(super) fn prepare_tailnet(&mut self) -> Result<()> {
+        if self.tailnet_binding.is_none()
+            && let Some(peer) = &self.tailnet_peer
+        {
+            let binding = crate::tailnet::bind_peer(peer, &self.target)?;
+            self.target = binding.target();
+            self.tailnet_binding = Some(binding);
+        }
+        Ok(())
     }
 
     pub(super) fn label(&self) -> &str {
@@ -363,8 +390,7 @@ const CATALOG_ROOTS: [&str; 3] = ["HERDR_CONFIG_PATH", "XDG_STATE_HOME", "XDG_CO
 
 /// The environment of every Herdr CLI run for a device: the user's `PATH`
 /// and agent, not launchd's, since `machine add` and `ssh-copy-id` run the
-/// user's own `ssh`, and the Tailscale CLI finds the Mac app's daemon with
-/// `/usr/sbin/lsof`; and this window's catalog. Blocks the first time the
+/// user's own `ssh`, and this window's catalog. Blocks the first time the
 /// login environment is read: call it off the UI thread.
 fn cli_environment(command: &mut Command) {
     crate::login_env::apply(command);
@@ -432,6 +458,23 @@ pub(super) struct TerminalSetup {
 /// CLI would need fails instead of waiting for input nobody can see.
 pub(super) fn save(request: &Request, claim: &Claim) -> Result<SaveOutcome> {
     request.remember_host_keys()?;
+    if let Some(binding) = &request.tailnet_binding {
+        verify_unsaved(request, claim)?;
+        let host = SavedHost {
+            id: uuid::Uuid::new_v4().simple().to_string(),
+            label: request.label.clone(),
+            target: request.target.clone(),
+            session: request.session.clone(),
+            enabled: true,
+        };
+        // Save the route first. A catalog entry must never become visible without it.
+        crate::config::Config::save_tailnet_binding(&host.id, binding)?;
+        let saved = herdr_client::store_saved_host(false, &host)?;
+        if saved.id != host.id {
+            return Err(Error::Exists(saved.label).into());
+        }
+        return Ok(SaveOutcome::Ready);
+    }
     let result = save_with(
         crate::daemon::executable(),
         request,

@@ -118,7 +118,7 @@ impl SettingsWindow {
             Mode::Dark
         };
         ui::row(&self.theme, "theme-mode", fl!("settings-theme-mode"))
-            .description(fl!("settings-theme-mode-hint"))
+            .help(fl!("settings-theme-mode-hint"))
             .control(ui::segmented(
                 &self.theme,
                 "theme-mode-control",
@@ -146,7 +146,7 @@ impl SettingsWindow {
         let value = self.drafted_theme();
         ThemeName::follows_system(value).then(|| {
             ui::row(&self.theme, "theme-side", fl!("settings-theme-side"))
-                .description(fl!(
+                .help(fl!(
                     "settings-theme-side-hint",
                     light = display_name(ThemeName::side(value, true)),
                     dark = display_name(ThemeName::side(value, false)),
@@ -173,7 +173,7 @@ impl SettingsWindow {
         let following = self.config.theme == FOLLOW;
         ui::row(&self.theme, "theme-follow", fl!("settings-theme-follow"))
             .tag(ui::Source::Herdr)
-            .description(fl!("settings-theme-follow-description"))
+            .help(fl!("settings-theme-follow-description"))
             .switch(
                 ui::toggle(&self.theme, "theme-follow-toggle", following, true).on_click(
                     cx.listener(move |this, _, _, cx| {
@@ -204,7 +204,7 @@ impl SettingsWindow {
             "theme-contrast",
             fl!("settings-theme-contrast"),
         )
-        .description(fl!("settings-theme-contrast-description"))
+        .help(fl!("settings-theme-contrast-description"))
         .switch(
             ui::toggle(&self.theme, "theme-contrast-toggle", high, true).on_click(cx.listener(
                 move |this, _, _, cx| {

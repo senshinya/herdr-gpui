@@ -184,6 +184,14 @@ jobs:
         with:
           ref: ${{ needs.validate.outputs.sha }}
           persist-credentials: false
+      - uses: actions/setup-go@90ad2b35f69faf97585ad74d28fa006d2739b7af # v7
+        with:
+          go-version: '1.26.7'
+          cache: false
+      - name: Install Windows C compiler for embedded Tailscale
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python scripts/setup-tailscale-cgo.py "$RUNNER_TEMP/tailscale-cgo" >> "$GITHUB_PATH"
       - run: rustup show
       - run: rustup target add "$TARGET"
       - name: Require Rosetta for the x86_64 executable
@@ -261,6 +269,14 @@ jobs:
           persist-credentials: false
       - name: Install GPUI build dependencies
         run: bash scripts/install-linux-deps.sh
+      - uses: actions/setup-go@90ad2b35f69faf97585ad74d28fa006d2739b7af # v7
+        with:
+          go-version: '1.26.7'
+          cache: false
+      - name: Install Windows C compiler for embedded Tailscale
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python scripts/setup-tailscale-cgo.py "$RUNNER_TEMP/tailscale-cgo" >> "$GITHUB_PATH"
       - run: rustup show
       - name: Require the declared native target
         run: |
@@ -354,6 +370,14 @@ jobs:
         with:
           ref: ${{ needs.validate.outputs.sha }}
           persist-credentials: false
+      - uses: actions/setup-go@90ad2b35f69faf97585ad74d28fa006d2739b7af # v7
+        with:
+          go-version: '1.26.7'
+          cache: false
+      - name: Install Windows C compiler for embedded Tailscale
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python scripts/setup-tailscale-cgo.py "$RUNNER_TEMP/tailscale-cgo" >> "$GITHUB_PATH"
       - run: rustup show
       - name: Require the declared native target
         run: |
@@ -457,6 +481,7 @@ jobs:
             ${{ runner.temp }}\signing\Herdr-${{ needs.validate.outputs.version }}-${{ matrix.target }}\herdr-automate.exe
             ${{ runner.temp }}\signing\Herdr-${{ needs.validate.outputs.version }}-${{ matrix.target }}\herdr-nearby.exe
             ${{ runner.temp }}\signing\Herdr-${{ needs.validate.outputs.version }}-${{ matrix.target }}\herdr-core.exe
+            ${{ runner.temp }}\signing\Herdr-${{ needs.validate.outputs.version }}-${{ matrix.target }}\herdr_tailscale.dll
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256

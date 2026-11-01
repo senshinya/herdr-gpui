@@ -36,6 +36,7 @@ pub mod opensandbox;
 pub mod railway;
 #[cfg(feature = "sprites")]
 pub mod sprites;
+pub mod tailscale;
 pub mod teleport;
 
 pub use error::{Error, Result};

@@ -15,7 +15,9 @@ mod layouts;
 mod navigation;
 mod pages;
 pub(crate) use layouts::{apply_loaded_layout, layout_load_revision};
+pub(crate) use pages::configuration::open as open_configuration;
 pub(crate) use pages::remote_control::open as open_remote;
+pub(crate) use pages::tailscale::{open as open_tailscale, open_devices as open_tailscale_devices};
 #[cfg(all(feature = "integration-test", target_os = "macos"))]
 mod native;
 mod persistence;
@@ -170,6 +172,7 @@ struct SettingsWindow {
     px0: controls::px0::Px0Settings,
     chat_env: controls::chat_env::ChatEnvSettings,
     remote: pages::remote_control::RemoteSettings,
+    tailnet: pages::tailscale::TailnetSettings,
     /// The open override dropdown, if any; its list renders inside its button.
     dropdown: Option<ui::Dropdown>,
     /// The number field being typed into, if any.
@@ -335,6 +338,7 @@ impl SettingsWindow {
             px0: Default::default(),
             chat_env: Default::default(),
             remote: Default::default(),
+            tailnet: Default::default(),
             dropdown: None,
             number_edit: None,
             number_preview: None,
@@ -703,6 +707,11 @@ impl SettingsWindow {
         if section == Section::General {
             self.open_chat_env_settings(cx);
         }
+        if section == Section::Tailscale {
+            self.open_tailscale(cx);
+        } else {
+            self.close_tailscale();
+        }
         if section == Section::RemoteControl {
             self.open_remote_control(cx);
         } else {
@@ -728,6 +737,7 @@ impl SettingsWindow {
 
 impl Render for SettingsWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        window.set_rem_size(px(self.config.ui.size));
         self.caption.sync(window, &self.theme);
         let searching = self.search_results.clone();
         let heading = if searching.is_some() {
@@ -743,11 +753,15 @@ impl Render for SettingsWindow {
                 Section::Plugins => self.render_plugin_controls(cx),
                 Section::Code => self.render_code_controls(window, cx),
                 Section::RemoteControl => self.render_remote_control(cx),
+                Section::Tailscale => self.render_tailscale(cx),
                 #[cfg(feature = "cloud")]
                 Section::CloudDevices => self.render_cloud_devices(cx),
                 _ => self.render_controls(window, cx),
             },
         };
+        if self.tailnet_advanced_moving() {
+            window.request_animation_frame();
+        }
         self.viewport_width = f32::from(window.viewport_size().width);
         let navigation = self.navigation(cx);
         let font_picker = self.render_control_font_picker(window, cx);
@@ -756,6 +770,52 @@ impl Render for SettingsWindow {
             let _ = this.update(cx, |view, cx| view.close(window, cx));
         });
         let theme = &self.theme;
+        let content_pane = if self.section == Section::Tailscale && searching.is_none() {
+            self.render_tailscale_pane(content, cx).into_any_element()
+        } else {
+            self.scroll_area(
+                scrollbar::Pane::Body,
+                div()
+                    .id("settings-body")
+                    .debug_selector(|| "settings-body".into())
+                    .role(Role::TabPanel)
+                    .aria_label(heading.clone())
+                    .flex_1()
+                    .min_w_0()
+                    .min_h_0()
+                    .overflow_y_scroll()
+                    .track_scroll(&self.body_scroll)
+                    .p(px(28.))
+                    .child(
+                        div()
+                            .text_size(rems(1.5))
+                            .line_height(rems(26. / 12.))
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .id("settings-page-title")
+                            .role(Role::Heading)
+                            .aria_label(heading.clone())
+                            .when_some(
+                                self.section.lead().filter(|_| searching.is_none()),
+                                |title, lead| {
+                                    let (foreground, surface) = (theme.foreground, theme.surface);
+                                    title.aria_description(lead.clone()).tooltip(move |_, cx| {
+                                        cx.new(|_| crate::usage::Hint {
+                                            text: lead.clone().into(),
+                                            foreground,
+                                            surface,
+                                        })
+                                        .into()
+                                    })
+                                },
+                            )
+                            .child(heading),
+                    )
+                    .child(div().h(px(12.)))
+                    .child(content),
+                cx,
+            )
+            .into_any_element()
+        };
         let root = div()
             .key_context("SettingsWindow")
             .relative()
@@ -787,49 +847,19 @@ impl Render for SettingsWindow {
             .flex_col()
             .overflow_hidden()
             .text_font(&self.config.ui)
-            .text_size(px(12.))
-            .line_height(px(18.))
+            .text_size(px(self.config.ui.size))
+            .line_height(px(self.config.ui.size * 1.5))
             .bg(rgb(theme.background))
             .text_color(rgb(theme.foreground))
             .text_start()
             .children(header)
             .child(
-                div().flex_1().min_h_0().row().child(navigation).child(
-                    self.scroll_area(
-                        scrollbar::Pane::Body,
-                        div()
-                            .id("settings-body")
-                            .debug_selector(|| "settings-body".into())
-                            .role(Role::TabPanel)
-                            .aria_label(heading.clone())
-                            .flex_1()
-                            .min_w_0()
-                            .min_h_0()
-                            .overflow_y_scroll()
-                            .track_scroll(&self.body_scroll)
-                            .p(px(28.))
-                            .child(
-                                div()
-                                    .text_size(px(18.))
-                                    .line_height(px(26.))
-                                    .font_weight(FontWeight::SEMIBOLD)
-                                    .child(heading),
-                            )
-                            .child(div().mb(px(16.)).when_some(
-                                self.section.lead().filter(|_| searching.is_none()),
-                                |header, lead| {
-                                    header.mt(px(2.)).child(
-                                        div()
-                                            .text_size(px(12.))
-                                            .text_color(rgb(theme.subtext()))
-                                            .child(lead),
-                                    )
-                                },
-                            ))
-                            .child(content),
-                        cx,
-                    ),
-                ),
+                div()
+                    .flex_1()
+                    .min_h_0()
+                    .row()
+                    .child(navigation)
+                    .child(content_pane),
             )
             .child(self.footer(cx))
             .children(font_picker);

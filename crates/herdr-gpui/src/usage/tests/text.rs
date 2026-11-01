@@ -42,7 +42,7 @@ fn pace_reads_as_the_crate_describes_it() {
 fn limits_name_their_kind_or_the_service_name() {
     let now = SystemTime::now();
     let weekly = Window::new(Kind::Weekly, 11., None, None);
-    assert_eq!(plain(text::left_heading(&weekly)), "Weekly 89% left");
+    assert_eq!(plain(text::used_heading(&weekly)), "Weekly 11% used");
     assert_eq!(plain(text::bar_label(&weekly, now)), weekly.label(now));
     let named = Window::new(Kind::Named("Opus".into()), 3., None, None);
     assert_eq!(plain(text::title(&named.kind)), "Opus");
